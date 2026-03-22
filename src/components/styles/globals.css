@@ -1,0 +1,134 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* Enable class-based dark mode */
+@variant dark (&:where(.dark, .dark *));
+
+/* ── Custom theme tokens ─────────────────────────────────────── */
+@theme {
+  --color-brand-50:  #f0f4ff;
+  --color-brand-100: #e0e9ff;
+  --color-brand-200: #c7d7fe;
+  --color-brand-300: #a5bcfd;
+  --color-brand-400: #8196fa;
+  --color-brand-500: #6370f5;
+  --color-brand-600: #5655ea;
+  --color-brand-700: #4a44d0;
+  --color-brand-800: #3c38a8;
+  --color-brand-900: #343585;
+  --color-brand-950: #201f4e;
+
+  --color-surface-dark:   #0f0f13;
+  --color-surface-dark-2: #16161d;
+  --color-surface-dark-3: #1e1e28;
+  --color-surface-dark-4: #262633;
+
+  --font-display: 'Sora', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  --shadow-glow-brand: 0 0 20px rgba(99,112,245,0.35);
+  --shadow-glow-sm:    0 0 10px rgba(99,112,245,0.2);
+  --shadow-card:       0 2px 16px rgba(0,0,0,0.08);
+  --shadow-card-dark:  0 2px 16px rgba(0,0,0,0.4);
+
+  --animate-fade-in:        fadeIn 0.3s ease-in-out;
+  --animate-slide-up:       slideUp 0.4s cubic-bezier(0.16,1,0.3,1);
+  --animate-slide-in-right: slideInRight 0.4s cubic-bezier(0.16,1,0.3,1);
+  --animate-pulse-slow:     pulse 3s cubic-bezier(0.4,0,0.6,1) infinite;
+}
+
+/* ── CSS Variables ───────────────────────────────────────────── */
+:root {
+  --brand: #6370f5;
+  --brand-light: #8196fa;
+  --surface: #ffffff;
+  --surface-2: #f7f8fc;
+  --surface-3: #eef0f8;
+  --text: #0f0f13;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+  --radius: 12px;
+}
+
+.dark {
+  --surface: #0f0f13;
+  --surface-2: #16161d;
+  --surface-3: #1e1e28;
+  --text: #f0f0f8;
+  --text-muted: #9ca3af;
+  --border: #262633;
+}
+
+/* ── Base reset ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: var(--surface);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Sora', sans-serif;
+  font-weight: 600;
+}
+
+/* ── Custom Scrollbar ────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 100px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brand); }
+
+/* ── Skeleton shimmer ────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -468px 0; }
+  100% { background-position:  468px 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--surface-3) 50%,
+    var(--surface-2) 75%
+  );
+  background-size: 936px 100%;
+  animation: shimmer 1.6s infinite linear;
+  border-radius: 8px;
+}
+
+/* ── Kanban ──────────────────────────────────────────────────── */
+.kanban-column { min-height: 200px; transition: background 0.2s; }
+.kanban-column.drag-over {
+  background: rgba(99, 112, 245, 0.06);
+  border-color: var(--brand);
+}
+
+/* ── Focus ring ──────────────────────────────────────────────── */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* ── Glass ───────────────────────────────────────────────────── */
+.glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── Keyframes ───────────────────────────────────────────────── */
+@keyframes fadeIn {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes slideUp {
+  0%   { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInRight {
+  0%   { opacity: 0; transform: translateX(16px); }
+  100% { opacity: 1; transform: translateX(0); }
+}

@@ -6,7 +6,7 @@ export async function fetchAIData(prompt, template, maxWords) {
     // Validate the required "prompt" parameter
     if (!prompt || typeof prompt !== "string") {
       throw new Error("The 'prompt' parameter is required and must be a string.");
-    }
+    }4
 
     // Construct the body dynamically, including properties only if they are valid
     const body = {

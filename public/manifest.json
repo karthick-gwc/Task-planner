@@ -1,21 +1,110 @@
 {
-  "name": "Food App",
+  "name": "Task Planner",
   "version": "0.0.1",
   "size": {
     "width": 3,
     "height": 3
   },
-  "mapping": [
+  "workflowMapping": [],
+  "fileName": "manifest.json",
+  "datasetsMapping": [
     {
-      "dataSetId": "ccbec447-c395-4929-b17e-b5a8f2d16dfe",
-      "alias": "CoffeeData",
+      "dataSetId": "89ee3c34-e69d-446d-8e78-f63c090459c2",
+      "alias": "TestDataset",
       "fields": []
     }
   ],
-  "workflowMapping": [],
-  "id": "913534c8-b60b-449a-9cc5-1ee2a6c7c233",
-  "proxyId": "06d9ffe7-7606-4c3f-8918-81471ea3027d",
-  "fileName": "manifest.json",
-  "datasetsMapping": [],
-  "collectionsMapping": []
+  "collectionsMapping": [
+    {
+      "name": "tasks",
+      "schema": {
+        "columns": [
+          { "name": "title",       "type": "STRING" },
+          { "name": "description", "type": "STRING" },
+          { "name": "priority",    "type": "STRING" },
+          { "name": "status",      "type": "STRING" },
+          { "name": "category",    "type": "STRING" },
+          { "name": "due_date",    "type": "DATE" },
+          { "name": "assigned_to", "type": "STRING" },
+          { "name": "created_by",  "type": "STRING" },
+          { "name": "recurrence",  "type": "STRING" },
+          { "name": "tags",        "type": "STRING" },
+          { "name": "dependencies","type": "STRING" },
+          { "name": "progress",    "type": "LONG" },
+          { "name": "createdAt",   "type": "DATE" },
+          { "name": "updatedAt",   "type": "DATE" }
+        ]
+      },
+      "syncEnabled": true
+    },
+    {
+      "name": "users_meta",
+      "schema": {
+        "columns": [
+          { "name": "userId",      "type": "STRING" },
+          { "name": "displayName", "type": "STRING" },
+          { "name": "email",       "type": "STRING" },
+          { "name": "role",        "type": "STRING" },
+          { "name": "avatarKey",   "type": "STRING" },
+          { "name": "createdAt",   "type": "DATE" }
+        ]
+      },
+      "syncEnabled": true
+    },
+    {
+      "name": "notifications",
+      "schema": {
+        "columns": [
+          { "name": "title",     "type": "STRING" },
+          { "name": "message",   "type": "STRING" },
+          { "name": "type",      "type": "STRING" },
+          { "name": "read",      "type": "LONG"   },
+          { "name": "userId",    "type": "STRING" },
+          { "name": "taskId",    "type": "STRING" },
+          { "name": "createdAt", "type": "DATE"   }
+        ]
+      },
+      "syncEnabled": true
+    },
+    {
+      "name": "comments",
+      "schema": {
+        "columns": [
+          { "name": "taskId",    "type": "STRING" },
+          { "name": "userId",    "type": "STRING" },
+          { "name": "text",      "type": "STRING" },
+          { "name": "createdAt", "type": "DATE"   }
+        ]
+      },
+      "syncEnabled": true
+    },
+    {
+      "name": "myDb",
+      "schema": {
+        "columns": [
+          {
+            "name": "name",
+            "type": "STRING"
+          },
+          {
+            "name": "age",
+            "type": "LONG"
+          },
+          {
+            "name": "isStudent",
+            "type": "LONG"
+          },
+          {
+            "name": "enrollmentDate",
+            "type": "DATE"
+          }
+
+        ]
+      },
+      "syncEnabled": true
+    }
+  ],
+
+  "id": "e29a94ae-fea7-47b5-8358-42e6a20b2555",
+  "proxyId": "15e58cde-e0ff-47ae-bf25-0723113f7ba3"
 }

@@ -11,7 +11,7 @@ import { Skeleton } from '../components/ui';
 import type { Task } from '@/components/types';
 import toast from 'react-hot-toast';
 import { formatRelative } from '../components/utils';
-import { deleteTask, fetchTasks, updateTask } from '@/components/store/slices/taskSlice';
+import { deleteTask, fetchTasks, fetchMyTasks, updateTask } from '@/components/store/slices/taskSlice';
 
 const S: React.CSSProperties = { color: 'var(--text)' };
 const SM: React.CSSProperties = { color: 'var(--text-muted)' };
@@ -24,7 +24,13 @@ export function DashboardPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
 
-  useEffect(() => { dispatch(fetchTasks()); }, [dispatch]);
+  useEffect(() => {
+    if (user?.role === 'employee') {
+      dispatch(fetchMyTasks(user.id));
+    } else {
+      dispatch(fetchTasks());
+    }
+  }, [dispatch, user?.id, user?.role]);
 
   const recentTasks  = tasks.slice(0, 5);
   const urgentTasks  = tasks.filter((t) => t.priority === 'urgent' && t.status !== 'completed').slice(0, 3);

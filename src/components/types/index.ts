@@ -115,6 +115,8 @@ export interface AnalyticsData {
 
 export interface Notification {
   id: string;
+  userId?: string;   // owner — used to ensure only the right user sees it
+  taskId?: string;   // linked task (optional)
   title: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';

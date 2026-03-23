@@ -23,18 +23,38 @@ const PRIORITY_BAR: Record<string, string> = {
 
 export function TaskCard({ task, onEdit, onDelete, onStatusChange, compact = false }: TaskCardProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const menuRef = React.useRef<HTMLDivElement>(null);
   const { user } = useAppSelector((s) => s.auth);
 
   const overdue = isOverdue(task.due_date) && task.status !== 'completed';
   const dueSoon = isDueSoon(task.due_date) && task.status !== 'completed';
 
-  // Close menu on outside click
+  // Fix: use a ref-checked mousedown listener so menu-item clicks fire before the menu closes
   React.useEffect(() => {
     if (!menuOpen) return;
-    const fn = (e: MouseEvent) => setMenuOpen(false);
+    const fn = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
     document.addEventListener('mousedown', fn);
     return () => document.removeEventListener('mousedown', fn);
   }, [menuOpen]);
+
+  const handleStatusChange = (status: Task['status']) => {
+    setMenuOpen(false);
+    onStatusChange?.(task.id, status);
+  };
+
+  const handleEdit = () => {
+    setMenuOpen(false);
+    onEdit?.(task);
+  };
+
+  const handleDelete = () => {
+    setMenuOpen(false);
+    onDelete?.(task.id);
+  };
 
   return (
     <motion.div
@@ -70,7 +90,8 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, compact = fal
               <Badge variant={task.category} className="capitalize">{task.category}</Badge>
             </div>
 
-            <div className="relative shrink-0">
+            {/* Menu — wrapped in ref div so outside-click check works */}
+            <div ref={menuRef} className="relative shrink-0">
               <button
                 onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o); }}
                 className="opacity-0 group-hover:opacity-100 h-7 w-7 flex items-center justify-center rounded-lg transition-all"
@@ -83,15 +104,20 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, compact = fal
 
               {menuOpen && (
                 <div
-                  className="absolute right-0 top-full mt-1 w-40 rounded-xl border shadow-2xl z-20 overflow-hidden py-1"
+                  className="absolute right-0 top-full mt-1 w-44 rounded-xl border shadow-2xl z-20 overflow-hidden py-1"
                   style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
                 >
+                  {/* Status change options */}
                   {(['in_progress', 'completed', 'pending'] as Task['status'][])
                     .filter((s) => s !== task.status)
                     .map((s) => (
                       <button
                         key={s}
-                        onClick={(e) => { e.stopPropagation(); onStatusChange?.(task.id, s); setMenuOpen(false); }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();   // prevent mousedown from triggering outside-click listener
+                          e.stopPropagation();
+                          handleStatusChange(s);
+                        }}
                         className="w-full text-left px-3 py-2 text-xs transition-colors capitalize"
                         style={{ color: 'var(--text)' }}
                         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
@@ -102,7 +128,11 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, compact = fal
                     ))}
                   <div style={{ borderTop: '1px solid var(--border)', margin: '2px 0' }} />
                   <button
-                    onClick={(e) => { e.stopPropagation(); onEdit?.(task); setMenuOpen(false); }}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleEdit();
+                    }}
                     className="w-full text-left px-3 py-2 text-xs transition-colors"
                     style={{ color: 'var(--text)' }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
@@ -111,7 +141,11 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, compact = fal
                     Edit task
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); onDelete?.(task.id); setMenuOpen(false); }}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDelete();
+                    }}
                     className="w-full text-left px-3 py-2 text-xs text-red-500 transition-colors"
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(239,68,68,0.08)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}

@@ -63,13 +63,28 @@ export function Header({ title }: { title?: string }) {
     if (notifOpen && currentUser?.id) dispatch(fetchNotifications(currentUser.id));
   }, [notifOpen, currentUser?.id, dispatch]);
 
-  // Overdue task auto-notifications (once per session per task)
+  // Overdue task auto-notifications — role-aware (once per session per task)
   useEffect(() => {
     if (!currentUser?.id || tasks.length === 0) return;
+
+    // Determine which tasks are "mine" based on role:
+    // - employee: only tasks assigned to me
+    // - manager : tasks I created OR assigned to me
+    // - admin   : all tasks (full visibility)
+    const myTasks = tasks.filter((task) => {
+      if (currentUser.role === 'admin') return true;
+      if (currentUser.role === 'manager') {
+        return task.created_by === currentUser.id || task.assigned_to === currentUser.id;
+      }
+      // employee
+      return task.assigned_to === currentUser.id;
+    });
+
     const key  = `notified_overdue_${currentUser.id}`;
     const seen: string[] = JSON.parse(sessionStorage.getItem(key) ?? '[]');
     let changed = false;
-    tasks.forEach((task) => {
+
+    myTasks.forEach((task) => {
       const overdue = task.due_date && new Date(task.due_date) < new Date();
       const active  = task.status !== 'completed';
       if (overdue && active && !seen.includes(task.id)) {
@@ -78,7 +93,9 @@ export function Header({ title }: { title?: string }) {
         dispatch(createNotification({
           notification: {
             title: 'Task Overdue',
-            message: `"${task.title}" is past its due date.`,
+            message: currentUser.role === 'employee'
+              ? `Your task "${task.title}" is past its due date.`
+              : `"${task.title}" (assigned to ${task.assigned_to ?? 'someone'}) is overdue.`,
             type: 'error',
             read: false,
             createdAt: new Date().toISOString(),
@@ -89,7 +106,7 @@ export function Header({ title }: { title?: string }) {
       }
     });
     if (changed) sessionStorage.setItem(key, JSON.stringify(seen));
-  }, [tasks, currentUser?.id, dispatch]);
+  }, [tasks, currentUser?.id, currentUser?.role, dispatch]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchVal(e.target.value);

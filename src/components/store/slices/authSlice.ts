@@ -10,10 +10,23 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { AuthState, LoginCredentials, RegisterCredentials, User } from '../../types';
 import { UserMetaService } from '@/services/domoDataService';
 
+// Synchronously hydrate user from localStorage so the first render
+// already has user/role — prevents flash of wrong route or missing role.
+function loadUserSync(): User | null {
+  try {
+    const raw = localStorage.getItem('user');
+    return raw ? (JSON.parse(raw) as User) : null;
+  } catch {
+    return null;
+  }
+}
+
+const _storedUser = loadUserSync();
+
 const initialState: AuthState = {
-  user:            null,
+  user:            _storedUser,
   token:           localStorage.getItem('token'),
-  isAuthenticated: !!localStorage.getItem('token'),
+  isAuthenticated: !!localStorage.getItem('token') && _storedUser !== null,
   isLoading:       false,
   error:           null,
 };

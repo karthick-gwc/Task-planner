@@ -22,8 +22,8 @@ const NAV_ITEMS: NavItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard',  to: '/dashboard' },
   { icon: CheckSquare,     label: 'My Tasks',   to: '/tasks' },
   { icon: Calendar,        label: 'Calendar',   to: '/calendar' },
-  { icon: BarChart3,       label: 'Analytics',  to: '/analytics' },
-  { icon: Users,           label: 'Team',       to: '/team', role: ['admin', 'manager'] },
+  { icon: BarChart3,       label: 'Analytics',  to: '/analytics', role: ['admin'] },
+  { icon: Users,           label: 'Team',       to: '/team',      role: ['admin', 'manager'] },
   { icon: Settings,        label: 'Settings',   to: '/settings' },
 ];
 

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, LayoutGrid, List, CheckSquare } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../hooks/useAppRedux';
-import { deleteTask, updateTask } from '../components/store/slices/taskSlice';
+import { deleteTask, updateTask, fetchTasks, fetchMyTasks } from '../components/store/slices/taskSlice';
 import { TaskCard } from '../components/tasks/TaskCard';
 import { TaskFilters } from '../components/tasks/TaskFilters';
 import { TaskForm } from '../components/tasks/TaskForm';
@@ -15,6 +15,15 @@ type ViewMode = 'grid' | 'list';
 export function TasksPage() {
   const dispatch = useAppDispatch();
   const { filteredTasks, isLoading } = useAppSelector((s) => s.tasks);
+  const { user } = useAppSelector((s) => s.auth);
+
+  useEffect(() => {
+    if (user?.role === 'employee') {
+      dispatch(fetchMyTasks(user.id));
+    } else {
+      dispatch(fetchTasks());
+    }
+  }, [dispatch, user?.id, user?.role]);
   const [formOpen, setFormOpen] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');

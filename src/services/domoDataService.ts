@@ -86,6 +86,8 @@ function mapDocToNotification(doc: any): Notification {
   const c = doc?.content ?? {};
   return {
     id:        str(doc?.id),
+    userId:    str(c.userId),
+    taskId:    str(c.taskId),
     title:     str(c.title),
     message:   str(c.message),
     type:      str(c.type, 'info') as Notification['type'],

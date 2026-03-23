@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, CheckSquare, Kanban, Calendar, BarChart3,
+  LayoutDashboard, CheckSquare, Calendar, BarChart3,
   Users, Settings, LogOut, ChevronLeft, Zap,
 } from 'lucide-react';
 import { cn } from '../utils';
@@ -15,53 +15,65 @@ interface NavItem {
   icon: React.ElementType;
   label: string;
   to: string;
-  badge?: number;
   role?: string[];
 }
 
-const navItems: NavItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard', to: '/dashboard' },
-  { icon: CheckSquare, label: 'My Tasks', to: '/tasks' },
-  { icon: Kanban, label: 'Kanban Board', to: '/kanban' },
-  { icon: Calendar, label: 'Calendar', to: '/calendar' },
-  { icon: BarChart3, label: 'Analytics', to: '/analytics' },
-  { icon: Users, label: 'Team', to: '/team', role: ['admin', 'manager'] },
-  { icon: Settings, label: 'Settings', to: '/settings' },
+const NAV_ITEMS: NavItem[] = [
+  { icon: LayoutDashboard, label: 'Dashboard',  to: '/dashboard' },
+  { icon: CheckSquare,     label: 'My Tasks',   to: '/tasks' },
+  { icon: Calendar,        label: 'Calendar',   to: '/calendar' },
+  { icon: BarChart3,       label: 'Analytics',  to: '/analytics' },
+  { icon: Users,           label: 'Team',       to: '/team', role: ['admin', 'manager'] },
+  { icon: Settings,        label: 'Settings',   to: '/settings' },
 ];
 
+const SIDEBAR_OPEN_W  = 220;
+const SIDEBAR_CLOSE_W = 64;
+
 export function Sidebar() {
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
+  const dispatch        = useAppDispatch();
+  const navigate        = useNavigate();
   const { sidebarOpen } = useAppSelector((s) => s.ui);
-  const { user } = useAppSelector((s) => s.auth);
+  const { user }        = useAppSelector((s) => s.auth);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate('/login');
-  };
+  const handleLogout = () => { dispatch(logout()); navigate('/login'); };
 
-  const visibleItems = navItems.filter(
+  const visibleItems = NAV_ITEMS.filter(
     (item) => !item.role || (user && item.role.includes(user.role))
   );
 
   return (
     <motion.aside
-      animate={{ width: sidebarOpen ? 240 : 68 }}
-      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="relative h-screen flex flex-col border-r border-[var(--border)] bg-[var(--surface-2)] shrink-0 z-30"
+      animate={{ width: sidebarOpen ? SIDEBAR_OPEN_W : SIDEBAR_CLOSE_W }}
+      transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+      className="relative h-screen flex flex-col shrink-0 z-30 overflow-hidden"
+      style={{
+        borderRight:    '1px solid var(--border)',
+        background:     'var(--surface-2)',
+        minWidth:       sidebarOpen ? SIDEBAR_OPEN_W : SIDEBAR_CLOSE_W,
+      }}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-4 h-16 border-b border-[var(--border)]">
-        <div className="h-8 w-8 rounded-xl bg-brand-600 flex items-center justify-center shrink-0 shadow-glow-sm">
+      {/* ── Logo ── */}
+      <div
+        className="flex items-center h-16 px-4 shrink-0"
+        style={{ borderBottom: '1px solid var(--border)' }}
+      >
+        <div
+          className="h-8 w-8 rounded-xl bg-brand-600 flex items-center justify-center shrink-0"
+          style={{ boxShadow: 'var(--shadow-glow-sm)' }}
+        >
           <Zap className="h-4 w-4 text-white" />
         </div>
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {sidebarOpen && (
             <motion.span
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -8 }}
-              className="font-display font-bold text-[var(--text)] whitespace-nowrap"
+              key="logo-text"
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: 'auto' }}
+              exit={{ opacity: 0, width: 0 }}
+              transition={{ duration: 0.2 }}
+              className="ml-3 font-display font-bold text-base whitespace-nowrap overflow-hidden"
+              style={{ color: 'var(--text)' }}
             >
               TaskFlow
             </motion.span>
@@ -69,49 +81,82 @@ export function Sidebar() {
         </AnimatePresence>
       </div>
 
-      {/* Toggle button */}
+      {/* ── Collapse toggle ── */}
       <button
         onClick={() => dispatch(toggleSidebar())}
-        className="absolute -right-3 top-20 h-6 w-6 rounded-full border border-[var(--border)] bg-[var(--surface)] flex items-center justify-center shadow-sm hover:bg-brand-600 hover:text-white hover:border-brand-600 transition-all z-10"
+        className="absolute -right-3 top-[72px] h-6 w-6 rounded-full flex items-center justify-center z-10 border transition-all hover:scale-110"
+        style={{
+          background:   'var(--surface)',
+          borderColor:  'var(--border)',
+          color:        'var(--text-muted)',
+          boxShadow:    '0 1px 4px rgba(0,0,0,0.15)',
+        }}
+        title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
       >
-        <motion.div animate={{ rotate: sidebarOpen ? 0 : 180 }}>
-          <ChevronLeft className="h-3 w-3 text-[var(--text-muted)]" />
+        <motion.div animate={{ rotate: sidebarOpen ? 0 : 180 }} transition={{ duration: 0.25 }}>
+          <ChevronLeft className="h-3 w-3" />
         </motion.div>
       </button>
 
-      {/* Nav Items */}
-      <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto overflow-x-hidden">
+      {/* ── Nav ── */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5">
         {visibleItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-150 group relative',
+                'flex items-center rounded-xl transition-all duration-150 group relative',
+                'h-10 px-3 gap-3',
                 isActive
-                  ? 'bg-brand-600 text-white shadow-glow-sm'
-                  : 'text-[var(--text-muted)] hover:bg-[var(--surface-3)] hover:text-[var(--text)]'
+                  ? 'bg-brand-600 text-white'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text)]'
               )
+            }
+            style={({ isActive }) =>
+              isActive ? { boxShadow: 'var(--shadow-glow-sm)' }
+                       : { '--tw-text-opacity': 1 } as React.CSSProperties
             }
           >
             {({ isActive }) => (
               <>
-                <item.icon className={cn('h-5 w-5 shrink-0', isActive ? 'text-white' : '')} />
-                <AnimatePresence>
+                <item.icon
+                  className={cn(
+                    'h-[18px] w-[18px] shrink-0',
+                    isActive ? 'text-white' : ''
+                  )}
+                  style={isActive ? {} : { color: 'var(--text-muted)' }}
+                />
+
+                <AnimatePresence initial={false}>
                   {sidebarOpen && (
                     <motion.span
-                      initial={{ opacity: 0, x: -8 }}
+                      key={item.label}
+                      initial={{ opacity: 0, x: -6 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -8 }}
-                      className="text-sm font-medium whitespace-nowrap"
+                      exit={{ opacity: 0, x: -6 }}
+                      transition={{ duration: 0.18 }}
+                      className={cn(
+                        'text-sm font-medium whitespace-nowrap overflow-hidden',
+                        isActive ? 'text-white' : ''
+                      )}
+                      style={isActive ? {} : { color: 'var(--text)' }}
                     >
                       {item.label}
                     </motion.span>
                   )}
                 </AnimatePresence>
+
                 {/* Tooltip when collapsed */}
                 {!sidebarOpen && (
-                  <div className="absolute left-full ml-2 px-2 py-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg text-xs text-[var(--text)] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                  <div
+                    className="absolute left-full ml-3 px-2.5 py-1.5 rounded-lg text-xs shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border"
+                    style={{
+                      background:  'var(--surface)',
+                      color:       'var(--text)',
+                      borderColor: 'var(--border)',
+                    }}
+                  >
                     {item.label}
                   </div>
                 )}
@@ -121,20 +166,52 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* User section */}
-      <div className="p-3 border-t border-[var(--border)]">
-        <div className={cn('flex items-center gap-3 p-2 rounded-xl hover:bg-[var(--surface-3)] cursor-pointer transition-colors', !sidebarOpen && 'justify-center')}>
-          {user && <Avatar name={user.name} size="sm" />}
-          <AnimatePresence>
+      {/* ── User footer ── */}
+      <div
+        className="shrink-0 p-2"
+        style={{ borderTop: '1px solid var(--border)' }}
+      >
+        <div
+          className={cn(
+            'flex items-center rounded-xl px-2 py-2 gap-3 transition-colors cursor-default',
+            !sidebarOpen && 'justify-center'
+          )}
+        >
+          {user && <Avatar name={user.name} src={user.avatar} size="sm" />}
+
+          <AnimatePresence initial={false}>
             {sidebarOpen && user && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[var(--text)] truncate">{user.name}</p>
-                <p className="text-xs text-[var(--text-muted)] truncate capitalize">{user.role}</p>
+              <motion.div
+                key="user-info"
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex-1 min-w-0 overflow-hidden"
+              >
+                <p
+                  className="text-sm font-medium truncate"
+                  style={{ color: 'var(--text)' }}
+                >
+                  {user.name}
+                </p>
+                <p
+                  className="text-xs capitalize truncate"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  {user.role}
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
+
           {sidebarOpen && (
-            <button onClick={handleLogout} className="text-[var(--text-muted)] hover:text-red-500 transition-colors p-1">
+            <button
+              onClick={handleLogout}
+              className="p-1.5 rounded-lg transition-all hover:bg-red-500/10 hover:text-red-500 shrink-0"
+              style={{ color: 'var(--text-muted)' }}
+              title="Sign out"
+            >
               <LogOut className="h-4 w-4" />
             </button>
           )}

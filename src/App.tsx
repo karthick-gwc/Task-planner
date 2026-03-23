@@ -9,7 +9,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { TasksPage } from './pages/TasksPage';
 import { CalendarPage } from './pages/CalendarPage';
-// import { AnalyticsPage } from './pages/AnalyticsPage';
+import { AnalyticsPage } from './pages/AnalysticsPage';
 import { TeamPage } from './pages/TeamPage';
 import { SettingsPage } from './pages/SettingsPage';
 function App() {
@@ -34,7 +34,7 @@ function App() {
                <Route path="tasks" element={<TasksPage />} />
               {/* <Route path="kanban" element={<KanbanPage />} /> */}
               <Route path="calendar" element={<CalendarPage />} />
-              {/* <Route path="analytics" element={<AnalyticsPage />} /> */}
+              <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="team" element={
                 <ProtectedRoute allowedRoles={['admin', 'manager']}>
                   <TeamPage />

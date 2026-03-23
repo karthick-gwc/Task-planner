@@ -106,6 +106,10 @@
           {
             "name": "createdAt",
             "type": "STRING"
+          },
+          {
+            "name": "password_hash",
+            "type": "STRING"
           }
         ]
       },
@@ -170,7 +174,8 @@
         ]
       },
       "syncEnabled": true
-    }],
+    }
+  ],
 
   "id": "e29a94ae-fea7-47b5-8358-42e6a20b2555",
   "proxyId": "15e58cde-e0ff-47ae-bf25-0723113f7ba3"

@@ -10,6 +10,7 @@ import { Button, EmptyState, Skeleton } from '../components/ui';
 import type { Task } from '../components/types';
 import toast from 'react-hot-toast';
 import { cn } from '../components/utils';
+import { TaskComments } from '../components/tasks/Taskcomments';
 
 type ViewMode = 'grid' | 'list';
 
@@ -91,6 +92,7 @@ export function TasksPage() {
                 : 'flex flex-col'
             )}
           >
+            
             {filteredTasks.map((task) => (
               <TaskCard
                 key={task.id}
@@ -101,6 +103,7 @@ export function TasksPage() {
                 compact={viewMode === 'list'}
               />
             ))}
+            {/* <TaskComments taskId={task.id} />  */}
           </motion.div>
         </AnimatePresence>
       )}

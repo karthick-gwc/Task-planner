@@ -19,20 +19,62 @@
       "name": "tasks",
       "schema": {
         "columns": [
-          { "name": "title",       "type": "STRING" },
-          { "name": "description", "type": "STRING" },
-          { "name": "priority",    "type": "STRING" },
-          { "name": "status",      "type": "STRING" },
-          { "name": "category",    "type": "STRING" },
-          { "name": "due_date",    "type": "DATE" },
-          { "name": "assigned_to", "type": "STRING" },
-          { "name": "created_by",  "type": "STRING" },
-          { "name": "recurrence",  "type": "STRING" },
-          { "name": "tags",        "type": "STRING" },
-          { "name": "dependencies","type": "STRING" },
-          { "name": "progress",    "type": "LONG" },
-          { "name": "createdAt",   "type": "DATE" },
-          { "name": "updatedAt",   "type": "DATE" }
+          {
+            "name": "title",
+            "type": "STRING"
+          },
+          {
+            "name": "description",
+            "type": "STRING"
+          },
+          {
+            "name": "priority",
+            "type": "STRING"
+          },
+          {
+            "name": "status",
+            "type": "STRING"
+          },
+          {
+            "name": "category",
+            "type": "STRING"
+          },
+          {
+            "name": "due_date",
+            "type": "STRING"
+          },
+          {
+            "name": "assigned_to",
+            "type": "STRING"
+          },
+          {
+            "name": "created_by",
+            "type": "STRING"
+          },
+          {
+            "name": "recurrence",
+            "type": "STRING"
+          },
+          {
+            "name": "tags",
+            "type": "STRING"
+          },
+          {
+            "name": "dependencies",
+            "type": "STRING"
+          },
+          {
+            "name": "progress",
+            "type": "LONG"
+          },
+          {
+            "name": "createdAt",
+            "type": "STRING"
+          },
+          {
+            "name": "updatedAt",
+            "type": "STRING"
+          }
         ]
       },
       "syncEnabled": true
@@ -41,12 +83,30 @@
       "name": "users_meta",
       "schema": {
         "columns": [
-          { "name": "userId",      "type": "STRING" },
-          { "name": "displayName", "type": "STRING" },
-          { "name": "email",       "type": "STRING" },
-          { "name": "role",        "type": "STRING" },
-          { "name": "avatarKey",   "type": "STRING" },
-          { "name": "createdAt",   "type": "DATE" }
+          {
+            "name": "userId",
+            "type": "STRING"
+          },
+          {
+            "name": "displayName",
+            "type": "STRING"
+          },
+          {
+            "name": "email",
+            "type": "STRING"
+          },
+          {
+            "name": "role",
+            "type": "STRING"
+          },
+          {
+            "name": "avatarKey",
+            "type": "STRING"
+          },
+          {
+            "name": "createdAt",
+            "type": "STRING"
+          }
         ]
       },
       "syncEnabled": true
@@ -55,13 +115,34 @@
       "name": "notifications",
       "schema": {
         "columns": [
-          { "name": "title",     "type": "STRING" },
-          { "name": "message",   "type": "STRING" },
-          { "name": "type",      "type": "STRING" },
-          { "name": "read",      "type": "LONG"   },
-          { "name": "userId",    "type": "STRING" },
-          { "name": "taskId",    "type": "STRING" },
-          { "name": "createdAt", "type": "DATE"   }
+          {
+            "name": "title",
+            "type": "STRING"
+          },
+          {
+            "name": "message",
+            "type": "STRING"
+          },
+          {
+            "name": "type",
+            "type": "STRING"
+          },
+          {
+            "name": "read",
+            "type": "LONG"
+          },
+          {
+            "name": "userId",
+            "type": "STRING"
+          },
+          {
+            "name": "taskId",
+            "type": "STRING"
+          },
+          {
+            "name": "createdAt",
+            "type": "STRING"
+          }
         ]
       },
       "syncEnabled": true
@@ -70,40 +151,26 @@
       "name": "comments",
       "schema": {
         "columns": [
-          { "name": "taskId",    "type": "STRING" },
-          { "name": "userId",    "type": "STRING" },
-          { "name": "text",      "type": "STRING" },
-          { "name": "createdAt", "type": "DATE"   }
-        ]
-      },
-      "syncEnabled": true
-    },
-    {
-      "name": "myDb",
-      "schema": {
-        "columns": [
           {
-            "name": "name",
+            "name": "taskId",
             "type": "STRING"
           },
           {
-            "name": "age",
-            "type": "LONG"
+            "name": "userId",
+            "type": "STRING"
           },
           {
-            "name": "isStudent",
-            "type": "LONG"
+            "name": "text",
+            "type": "STRING"
           },
           {
-            "name": "enrollmentDate",
-            "type": "DATE"
+            "name": "createdAt",
+            "type": "STRING"
           }
-
         ]
       },
       "syncEnabled": true
-    }
-  ],
+    }],
 
   "id": "e29a94ae-fea7-47b5-8358-42e6a20b2555",
   "proxyId": "15e58cde-e0ff-47ae-bf25-0723113f7ba3"

@@ -11,7 +11,7 @@ export function formatDate(date: string, fmt = 'MMM d, yyyy') {
   try {
     return format(parseISO(date), fmt);
   } catch {
-    return date;
+  return date;
   }
 }
 

@@ -72,12 +72,15 @@ function mapDocToTask(doc: any): Task {
 function mapDocToUser(doc: any): User {
   const c = doc?.content ?? {};
   return {
-    id:        str(c.userId,  str(doc?.id)),
-    name:      str(c.displayName),
-    email:     str(c.email),
-    role:      str(c.role, 'employee') as User['role'],
-    avatar:    str(c.avatarKey),
-    createdAt: str(c.createdAt, new Date().toISOString()),
+    id:          str(c.userId,  str(doc?.id)),
+    name:        str(c.displayName),
+    email:       str(c.email),
+    role:        str(c.role, 'employee') as User['role'],
+    avatar:      str(c.avatarKey),
+    manager_id:  str(c.manager_id),
+    assigned_by: str(c.assigned_by),
+    assigned_at: str(c.assigned_at),
+    createdAt:   str(c.createdAt, new Date().toISOString()),
   };
 }
 
@@ -319,6 +322,35 @@ export const UserMetaService = {
     }
 
     const doc = await DomoApi.CreateDocument(COLLECTIONS.USERS_META, raw);
+    return mapDocToUser(doc);
+  },
+
+  /**
+   * Update manager assignment for a user
+   */
+  async updateManager(employeeId: string, managerId: string, assignedBy: string): Promise<User> {
+    const docs = await DomoApi.QueryDocument(
+      COLLECTIONS.USERS_META,
+      { 'content.userId': { $eq: employeeId } }
+    );
+
+    if (!Array.isArray(docs) || docs.length === 0) {
+      throw new Error('User not found');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const existingDoc = (docs as any[])[0];
+    const existingId = str(existingDoc?.id);
+    const c = existingDoc?.content ?? {};
+
+    const updatedContent = {
+      ...c,
+      manager_id: managerId,
+      assigned_by: assignedBy,
+      assigned_at: new Date().toISOString(),
+    };
+
+    const doc = await DomoApi.UpdateDocument(COLLECTIONS.USERS_META, existingId, updatedContent);
     return mapDocToUser(doc);
   },
 

@@ -2,5 +2,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+
 /* Tailwind v4 dark variant — class-based */
 @custom-variant dark (&:is(.dark *));
+

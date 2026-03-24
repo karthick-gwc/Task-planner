@@ -13,10 +13,6 @@ import toast from 'react-hot-toast';
 import { formatRelative } from '../components/utils';
 import { deleteTask, fetchTasks, fetchMyTasks, updateTask } from '@/components/store/slices/taskSlice';
 
-const S: React.CSSProperties = { color: 'var(--text)' };
-const SM: React.CSSProperties = { color: 'var(--text-muted)' };
-const SB: React.CSSProperties = { borderColor: 'var(--border)' };
-
 export function DashboardPage() {
   const dispatch = useAppDispatch();
   const { tasks, isLoading } = useAppSelector((s) => s.tasks);
@@ -25,11 +21,8 @@ export function DashboardPage() {
   const [editTask, setEditTask] = useState<Task | null>(null);
 
   useEffect(() => {
-    if (user?.role === 'employee') {
-      dispatch(fetchMyTasks(user.id));
-    } else {
-      dispatch(fetchTasks());
-    }
+    if (user?.role === 'employee') dispatch(fetchMyTasks(user.id));
+    else dispatch(fetchTasks());
   }, [dispatch, user?.id, user?.role]);
 
   const recentTasks  = tasks.slice(0, 5);
@@ -38,7 +31,7 @@ export function DashboardPage() {
   const activeTasks  = tasks.filter((t) => t.status !== 'completed').length;
 
   const handleEdit         = (task: Task) => { setEditTask(task); setFormOpen(true); };
-  const handleDelete       = (id: string)  => { dispatch(deleteTask(id)); toast.success('Task deleted'); };
+  const handleDelete       = (id: string) => { dispatch(deleteTask(id)); toast.success('Task deleted'); };
   const handleStatusChange = (id: string, status: Task['status']) => {
     dispatch(updateTask({ id, updates: { status } }));
     toast.success(`Marked as ${status.replace('_', ' ')}`);
@@ -50,47 +43,40 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-[1200px] mx-auto w-full px-3 sm:px-4 lg:px-6">
+    <div className="flex flex-col gap-6 max-w-[1200px] mx-auto w-full">
 
       {/* ── Welcome Banner ── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{
-          position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '24px 28px',
-          background: 'linear-gradient(135deg, #4a44d0 0%, #5655ea 55%, #6370f5 100%)',
-          boxShadow: '0 4px 24px rgba(86,85,234,0.28)',
-        }}
+        className="relative overflow-hidden rounded-2xl p-6 sm:p-7 bg-gradient-to-r from-brand-700 via-brand-600 to-brand-500 shadow-[0_4px_24px_rgba(86,85,234,0.28)]"
       >
-        <div style={{ position: 'absolute', top: -20, right: -20, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.07)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: -30, right: 80, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        {/* Decorative circles */}
+        <div className="absolute -top-5 -right-5 w-44 h-44 rounded-full bg-white/7 pointer-events-none" />
+        <div className="absolute -bottom-8 right-20 w-28 h-28 rounded-full bg-white/5 pointer-events-none" />
+
+        <div className="relative flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <p style={{ color: '#c7d7fe', fontSize: '0.85rem', marginBottom: 4 }}>
-              {greeting()}, <strong style={{ color: '#fff' }}>{user?.name} 👋</strong>
+            <p className="text-brand-200 text-sm mb-1">
+              {greeting()}, <strong className="text-white">{user?.name} 👋</strong>
             </p>
-            <h1 style={{ color: '#fff', fontSize: 'clamp(1.2rem,2.5vw,1.6rem)', fontWeight: 700, fontFamily: 'Sora,sans-serif', lineHeight: 1.3 }}>
-              {activeTasks > 0 ? `You have ${activeTasks} active task${activeTasks !== 1 ? 's' : ''}` : 'All tasks complete!'}
+            <h1 className="text-white text-xl sm:text-2xl font-bold font-display leading-snug">
+              {activeTasks > 0
+                ? `You have ${activeTasks} active task${activeTasks !== 1 ? 's' : ''}`
+                : 'All tasks complete!'}
             </h1>
             {overdueTasks.length > 0 && (
-              <p style={{ color: '#fca5a5', fontSize: '0.8rem', marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f87171', display: 'inline-block', flexShrink: 0 }} />
+              <p className="text-red-300 text-xs mt-1.5 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0 inline-block" />
                 {overdueTasks.length} task{overdueTasks.length !== 1 ? 's are' : ' is'} overdue
               </p>
             )}
           </div>
           <button
             onClick={() => { setEditTask(null); setFormOpen(true); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
-              background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)',
-              borderRadius: 12, color: '#fff', fontSize: '0.875rem', fontWeight: 600,
-              cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0,
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.25)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/25 bg-white/15 hover:bg-white/25 text-white text-sm font-semibold cursor-pointer transition-all duration-200 shrink-0"
           >
-            <Plus style={{ width: 16, height: 16 }} />
+            <Plus className="w-4 h-4" />
             New Task
           </button>
         </div>
@@ -98,7 +84,7 @@ export function DashboardPage() {
 
       {/* ── Stats ── */}
       {isLoading
-        ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 16 }}>
+        ? <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
           </div>
         : <DashboardStats />
@@ -106,14 +92,16 @@ export function DashboardPage() {
 
       {/* ── Main Grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+
         {/* Recent Tasks */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h2 style={{ ...S, fontWeight: 600, fontSize: '0.9rem', fontFamily: 'Sora,sans-serif' }}>Recent Tasks</h2>
-            <Link to="/tasks" style={{ color: '#8196fa', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}>
-              View all <ArrowRight style={{ width: 12, height: 12 }} />
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[var(--text)] font-semibold text-sm font-display">Recent Tasks</h2>
+            <Link to="/tasks" className="text-brand-400 text-xs flex items-center gap-1 no-underline hover:text-brand-300 transition-colors">
+              View all <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
+
           {isLoading
             ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)
             : recentTasks.length > 0
@@ -121,52 +109,56 @@ export function DashboardPage() {
                   <TaskCard key={task.id} task={task} onEdit={handleEdit} onDelete={handleDelete} onStatusChange={handleStatusChange} compact />
                 ))
               : (
-                <div style={{ borderRadius: 16, border: '1px solid var(--border)', padding: '40px 20px', textAlign: 'center', background: 'var(--surface-2)' }}>
-                  <CheckCircle2 style={{ width: 36, height: 36, margin: '0 auto 12px', opacity: 0.2, color: 'var(--text-muted)' }} />
-                  <p style={{ ...S, fontSize: '0.875rem', fontWeight: 500 }}>No tasks yet</p>
-                  <p style={{ ...SM, fontSize: '0.78rem', marginTop: 4 }}>Create your first task to get started</p>
+                <div className="rounded-2xl border border-[var(--border)] p-10 text-center bg-[var(--surface-2)]">
+                  <CheckCircle2 className="w-9 h-9 mx-auto mb-3 opacity-20 text-[var(--text-muted)]" />
+                  <p className="text-[var(--text)] text-sm font-medium">No tasks yet</p>
+                  <p className="text-[var(--text-muted)] text-xs mt-1">Create your first task to get started</p>
                 </div>
               )
           }
         </div>
 
         {/* Right column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="flex flex-col gap-4">
           <ProductivityScore />
 
+          {/* Overdue */}
           {overdueTasks.length > 0 && (
-            <div style={{ borderRadius: 16, border: '1px solid var(--border)', padding: 16, background: 'var(--surface-2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <span style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(239,68,68,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ color: '#ef4444', fontSize: '0.65rem', fontWeight: 700 }}>!</span>
+            <div className="rounded-2xl border border-[var(--border)] p-4 bg-[var(--surface-2)]">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-5 h-5 rounded-full bg-red-500/12 flex items-center justify-center shrink-0">
+                  <span className="text-red-500 text-[0.65rem] font-bold">!</span>
                 </span>
-                <span style={{ ...S, fontWeight: 600, fontSize: '0.85rem' }}>Overdue</span>
-                <span style={{ marginLeft: 'auto', background: 'rgba(239,68,68,0.1)', color: '#f87171', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>{overdueTasks.length}</span>
+                <span className="text-[var(--text)] font-semibold text-sm">Overdue</span>
+                <span className="ml-auto bg-red-500/10 text-red-400 text-[0.7rem] font-bold px-2 py-0.5 rounded-full">
+                  {overdueTasks.length}
+                </span>
               </div>
               {overdueTasks.slice(0, 3).map((task) => (
-                <div key={task.id} style={{ display: 'flex', gap: 8, padding: '8px 10px', borderRadius: 10, background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.12)', marginBottom: 6 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444', marginTop: 5, flexShrink: 0 }} />
+                <div key={task.id} className="flex gap-2 px-2.5 py-2 rounded-xl bg-red-500/5 border border-red-500/12 mb-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
                   <div>
-                    <p style={{ ...S, fontSize: '0.78rem', fontWeight: 500 }}>{task.title}</p>
-                    <p style={{ color: '#f87171', fontSize: '0.7rem', marginTop: 2 }}>{formatRelative(task.due_date)}</p>
+                    <p className="text-[var(--text)] text-xs font-medium">{task.title}</p>
+                    <p className="text-red-400 text-[0.7rem] mt-0.5">{formatRelative(task.due_date)}</p>
                   </div>
                 </div>
               ))}
             </div>
           )}
 
+          {/* Urgent */}
           {urgentTasks.length > 0 && (
-            <div style={{ borderRadius: 16, border: '1px solid var(--border)', padding: 16, background: 'var(--surface-2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <Flame style={{ width: 16, height: 16, color: '#f97316', flexShrink: 0 }} />
-                <span style={{ ...S, fontWeight: 600, fontSize: '0.85rem' }}>Urgent</span>
+            <div className="rounded-2xl border border-[var(--border)] p-4 bg-[var(--surface-2)]">
+              <div className="flex items-center gap-2 mb-3">
+                <Flame className="w-4 h-4 text-orange-500 shrink-0" />
+                <span className="text-[var(--text)] font-semibold text-sm">Urgent</span>
               </div>
               {urgentTasks.map((task) => (
-                <div key={task.id} style={{ display: 'flex', gap: 8, padding: '8px 10px', borderRadius: 10, background: 'rgba(249,115,22,0.05)', border: '1px solid rgba(249,115,22,0.12)', marginBottom: 6 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f97316', marginTop: 5, flexShrink: 0 }} />
+                <div key={task.id} className="flex gap-2 px-2.5 py-2 rounded-xl bg-orange-500/5 border border-orange-500/12 mb-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 shrink-0" />
                   <div>
-                    <p style={{ ...S, fontSize: '0.78rem', fontWeight: 500 }}>{task.title}</p>
-                    <p style={{ ...SM, fontSize: '0.7rem', marginTop: 2 }}>{formatRelative(task.due_date)}</p>
+                    <p className="text-[var(--text)] text-xs font-medium">{task.title}</p>
+                    <p className="text-[var(--text-muted)] text-[0.7rem] mt-0.5">{formatRelative(task.due_date)}</p>
                   </div>
                 </div>
               ))}

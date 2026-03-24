@@ -135,23 +135,15 @@ export const assignManager = createAsyncThunk(
   'auth/assignManager',
   async (data: { employee_id: string; manager_id: string; assigned_by: string }, { rejectWithValue }) => {
     try {
-      // In a real app, this would call an API
-      // For now, we'll simulate the assignment by updating the user data
-      // This would typically be handled by a backend service
+      // Update the user in the users_meta collection
+      const updatedUser = await UserMetaService.updateManager(data.employee_id, data.manager_id, data.assigned_by);
 
-      // Mock implementation - in real app, call UserMetaService.updateManager(employee_id, manager_id, assigned_by)
-      const assignment = {
-        id: `ma_${Date.now()}`,
+      return {
         employee_id: data.employee_id,
         manager_id: data.manager_id,
         assigned_by: data.assigned_by,
-        assigned_at: new Date().toISOString(),
+        assigned_at: updatedUser.assigned_at!,
       };
-
-      // Here you would call your API service
-      // await UserMetaService.assignManager(data);
-
-      return assignment;
     } catch (err: any) {
       return rejectWithValue(err?.message ?? 'Failed to assign manager');
     }

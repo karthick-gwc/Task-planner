@@ -43,6 +43,9 @@ export function AssignManagerModal({ isOpen, onClose, employee }: AssignManagerM
         assigned_by: currentUser.id,
       })).unwrap();
 
+      // Refetch users to show updated data
+      await dispatch(fetchAllUsers()).unwrap();
+
       toast.success(`Manager assigned successfully to ${employee.name}`);
       onClose();
     } catch (error) {

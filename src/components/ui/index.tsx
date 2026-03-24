@@ -20,7 +20,7 @@ interface CardProps {
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
-const paddings = { none: '', sm: 'p-3', md: 'p-5', lg: 'p-6' };
+// const paddings = { none: '', sm: 'p-3', md: 'p-5', lg: 'p-6' };
 
 export function Card({ children, className, onClick, hover = false, padding = 'md' }: CardProps) {
   return (
@@ -29,7 +29,7 @@ export function Card({ children, className, onClick, hover = false, padding = 'm
       className={cn(
         'rounded-2xl border border-[var(--border)] bg-[var(--surface-2)]',
         hover && 'cursor-pointer hover:border-brand-500/40 hover:shadow-[var(--shadow-glow-sm)] transition-all duration-200',
-        paddings[padding],
+        // paddings[padding],
         className
       )}
     >

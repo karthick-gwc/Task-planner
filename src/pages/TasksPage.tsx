@@ -9,6 +9,7 @@ import { TaskForm } from '../components/tasks/TaskForm';
 import { Skeleton } from '../components/ui';
 import type { Task } from '../components/types';
 import toast from 'react-hot-toast';
+import { cn } from '../components/utils';
 
 type ViewMode = 'grid' | 'list';
 
@@ -18,72 +19,65 @@ export function TasksPage() {
   const { user } = useAppSelector((s) => s.auth);
 
   useEffect(() => {
-    if (user?.role === 'employee') {
-      dispatch(fetchMyTasks(user.id));
-    } else {
-      dispatch(fetchTasks());
-    }
+    if (user?.role === 'employee') dispatch(fetchMyTasks(user.id));
+    else dispatch(fetchTasks());
   }, [dispatch, user?.id, user?.role]);
+
   const [formOpen, setFormOpen] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   const handleEdit         = (task: Task) => { setEditTask(task); setFormOpen(true); };
-  const handleDelete       = (id: string)  => { dispatch(deleteTask(id)); toast.success('Task deleted'); };
+  const handleDelete       = (id: string) => { dispatch(deleteTask(id)); toast.success('Task deleted'); };
   const handleStatusChange = (id: string, status: Task['status']) => {
     dispatch(updateTask({ id, updates: { status } }));
     toast.success(`Marked as ${status.replace('_', ' ')}`);
   };
 
   return (
-    <div className="flex flex-col gap-5 max-w-[1200px] mx-auto w-full px-3 sm:px-4 lg:px-6">
+    <div className="flex flex-col gap-5 max-w-[1200px] mx-auto w-full">
 
       {/* ── Page Header ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 style={{ color: 'var(--text)', fontWeight: 700, fontSize: 'clamp(1.3rem,2.5vw,1.6rem)', fontFamily: 'Sora,sans-serif', margin: 0 }}>
+          <h1  className="text-[var(--text)]  font-bold text-2xl sm:text-[1.6rem] font-display m-0">
             My Tasks
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: 4 }}>
+          <p className="text-[var(--text-muted)] text-sm mt-1">
             {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''} found
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="flex items-center gap-2.5">
           {/* View toggle */}
-          <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+          <div className="flex border border-[var(--border)] rounded-xl overflow-hidden">
             {(['grid', 'list'] as ViewMode[]).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                style={{
-                  width: 36, height: 36,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: viewMode === mode ? '#5655ea' : 'var(--surface-3)',
-                  color: viewMode === mode ? '#fff' : 'var(--text-muted)',
-                  border: 'none', cursor: 'pointer', transition: 'background 0.15s',
-                }}
+                className={cn(
+                  'w-9 h-9 flex items-center justify-center border-none cursor-pointer transition-colors',
+                  viewMode === mode
+                    ? 'bg-brand-600 text-white'
+                    : 'bg-[var(--surface-3)] text-[var(--text-muted)] hover:text-[var(--text)]'
+                )}
               >
-                {mode === 'grid' ? <LayoutGrid style={{ width: 15, height: 15 }} /> : <List style={{ width: 15, height: 15 }} />}
+                {mode === 'grid'
+                  ? <LayoutGrid className="w-[15px] h-[15px]" />
+                  : <List className="w-[15px] h-[15px]" />
+                }
               </button>
             ))}
           </div>
 
-          {/* New Task button */}
+          {/* New Task */}
           <button
             onClick={() => { setEditTask(null); setFormOpen(true); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              padding: '9px 18px', borderRadius: 12, border: 'none',
-              background: '#5655ea', color: '#fff', fontSize: '0.875rem', fontWeight: 600,
-              cursor: 'pointer', transition: 'background 0.2s, box-shadow 0.2s',
-              boxShadow: '0 3px 12px rgba(86,85,234,0.3)',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#4a44d0'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '#5655ea'; }}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-none bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold cursor-pointer transition-all shadow-[0_3px_12px_rgba(86,85,234,0.3)] active:scale-95"
           >
-            <Plus style={{ width: 15, height: 15 }} />
-            New Task
+            <Plus className="w-[15px] h-[15px]" />
+            <span className="hidden sm:inline">New Task</span>
+            <span className="sm:hidden">New</span>
           </button>
         </div>
       </div>
@@ -93,41 +87,34 @@ export function TasksPage() {
 
       {/* ── Task Grid / List ── */}
       {isLoading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill,minmax(280px,1fr))' : '1fr', gap: 16, gridAutoRows: viewMode === 'grid' ? '1fr' : 'auto' }}>
+        <div className={cn(
+          'grid gap-4',
+          viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
+        )}>
           {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
         </div>
       ) : filteredTasks.length === 0 ? (
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          padding: '80px 20px', textAlign: 'center',
-          border: '2px dashed var(--border)', borderRadius: 20,
-        }}>
-          <CheckSquare style={{ width: 48, height: 48, color: 'var(--text-muted)', opacity: 0.25, marginBottom: 16 }} />
-          <p style={{ color: 'var(--text)', fontWeight: 600, fontSize: '1rem', marginBottom: 6 }}>No tasks found</p>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 20 }}>
+        <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-[var(--border)] rounded-2xl">
+          <CheckSquare className="w-12 h-12 text-[var(--text-muted)] opacity-25 mb-4" />
+          <p className="text-[var(--text)] font-semibold text-base mb-1.5">No tasks found</p>
+          <p className="text-[var(--text-muted)] text-sm mb-5">
             Try adjusting your filters or create a new task
           </p>
           <button
             onClick={() => { setEditTask(null); setFormOpen(true); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px',
-              borderRadius: 12, border: 'none', background: '#5655ea', color: '#fff',
-              fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
-            }}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-none bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold cursor-pointer transition-all"
           >
-            <Plus style={{ width: 15, height: 15 }} /> Create Task
+            <Plus className="w-[15px] h-[15px]" /> Create Task
           </button>
         </div>
       ) : (
         <AnimatePresence mode="popLayout">
           <motion.div
             layout
-            style={{
-              display: 'grid',
-              gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill,minmax(280px,1fr))' : '1fr',
-              gap: 16,
-              gridAutoRows: viewMode === 'grid' ? '1fr' : 'auto',
-            }}
+            className={cn(
+              'grid gap-4',
+              viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
+            )}
           >
             {filteredTasks.map((task) => (
               <TaskCard

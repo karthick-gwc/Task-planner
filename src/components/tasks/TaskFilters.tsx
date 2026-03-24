@@ -103,6 +103,7 @@ import { Filter, X } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppRedux';
 import { setFilters, clearFilters } from '../store/slices/taskSlice';
 import type { TaskStatus, TaskPriority, TaskCategory } from '../types';
+import { cn } from '../utils';
 
 const STATUS_OPTIONS: { value: TaskStatus | 'all'; label: string }[] = [
   { value: 'all',         label: 'All'         },
@@ -128,19 +129,7 @@ const CATEGORY_OPTIONS: { value: TaskCategory | 'all'; label: string }[] = [
   { value: 'other',    label: '📌 Other'        },
 ];
 
-const chipStyle = (active: boolean): React.CSSProperties => ({
-  padding: '5px 12px', borderRadius: 99, fontSize: '0.78rem', fontWeight: 500,
-  border: 'none', cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
-  background: active ? '#5655ea' : 'var(--surface-3)',
-  color:      active ? '#fff'    : 'var(--text-muted)',
-  boxShadow:  active ? '0 2px 8px rgba(86,85,234,0.25)' : 'none',
-});
-
-const selectStyle: React.CSSProperties = {
-  height: 32, padding: '0 10px', borderRadius: 10, fontSize: '0.78rem',
-  border: '1px solid var(--border)', background: 'var(--surface-3)',
-  color: 'var(--text)', outline: 'none', cursor: 'pointer',
-};
+const SELECT_CLASS = 'h-8 px-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-3)] text-[var(--text)] text-xs outline-none focus:border-brand-500 cursor-pointer';
 
 export function TaskFilters() {
   const dispatch = useAppDispatch();
@@ -148,43 +137,51 @@ export function TaskFilters() {
   const hasActive = filters.status !== 'all' || filters.priority !== 'all' || filters.category !== 'all';
 
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
+    <div className="flex flex-wrap items-center gap-2.5">
       {/* Label */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-        <Filter style={{ width: 13, height: 13 }} />
+      <div className="flex items-center gap-1.5 text-[var(--text-muted)] text-[0.8rem]">
+        <Filter className="w-3 h-3" />
         <span>Filter:</span>
       </div>
 
-      {/* Status chips */}
-      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-        {STATUS_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => dispatch(setFilters({ status: opt.value }))}
-            style={chipStyle(filters.status === opt.value || (!filters.status && opt.value === 'all'))}
-          >
-            {opt.label}
-          </button>
-        ))}
+      {/* Status chips — scroll on mobile */}
+      <div className="flex gap-1.5 flex-wrap">
+        {STATUS_OPTIONS.map((opt) => {
+          const active = filters.status === opt.value || (!filters.status && opt.value === 'all');
+          return (
+            <button
+              key={opt.value}
+              onClick={() => dispatch(setFilters({ status: opt.value }))}
+              className={cn(
+                'px-3 py-1 rounded-full text-xs font-medium border-none cursor-pointer transition-all duration-150',
+                active
+                  ? 'bg-brand-600 text-white shadow-[0_2px_8px_rgba(86,85,234,0.25)]'
+                  : 'bg-[var(--surface-3)] text-[var(--text-muted)] hover:text-[var(--text)]'
+              )}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Divider */}
-      <div style={{ width: 1, height: 18, background: 'var(--border)', flexShrink: 0 }} />
+      <div className="w-px h-[18px] bg-[var(--border)] shrink-0 hidden sm:block" />
 
-      {/* Priority select */}
+      {/* Priority */}
       <select
         value={filters.priority || 'all'}
         onChange={(e) => dispatch(setFilters({ priority: e.target.value as TaskPriority | 'all' }))}
-        style={selectStyle}
+        className={SELECT_CLASS}
       >
         {PRIORITY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
 
-      {/* Category select */}
+      {/* Category */}
       <select
         value={filters.category || 'all'}
         onChange={(e) => dispatch(setFilters({ category: e.target.value as TaskCategory | 'all' }))}
-        style={selectStyle}
+        className={SELECT_CLASS}
       >
         {CATEGORY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
@@ -193,14 +190,9 @@ export function TaskFilters() {
       {hasActive && (
         <button
           onClick={() => dispatch(clearFilters())}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px',
-            borderRadius: 99, border: 'none', background: 'rgba(239,68,68,0.1)',
-            color: '#f87171', fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer',
-          }}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-full border-none bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-medium cursor-pointer transition-colors"
         >
-          <X style={{ width: 12, height: 12 }} />
-          Clear
+          <X className="w-3 h-3" /> Clear
         </button>
       )}
     </div>

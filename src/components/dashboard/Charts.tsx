@@ -20,33 +20,26 @@ const cardVariants = {
   }),
 };
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-
 interface StatCardProps {
-  label:    string;
-  value:    number | string;
-  icon:     React.ElementType;
+  label:     string;
+  value:     number | string;
+  icon:      React.ElementType;
   iconColor: string;
-  iconBg:   string;
-  trend?:   number;
-  index?:   number;
+  iconBg:    string;
+  trend?:    number;
+  index?:    number;
 }
 
 function StatCard({ label, value, icon: Icon, iconColor, iconBg, trend, index = 0 }: StatCardProps) {
   return (
     <motion.div custom={index} initial="hidden" animate="visible" variants={cardVariants}>
-      <div
-        className="relative overflow-hidden rounded-2xl border p-4"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
-      >
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-[11px] font-medium uppercase tracking-wide mb-1.5" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-[11px] font-medium uppercase tracking-wide mb-1.5 text-[var(--text-muted)]">
               {label}
             </p>
-            <p className="text-2xl font-bold font-display" style={{ color: 'var(--text)' }}>
-              {value}
-            </p>
+            <p className="text-2xl font-bold font-display text-[var(--text)]">{value}</p>
             {trend !== undefined && (
               <div className="flex items-center gap-1 mt-1.5">
                 <TrendingUp
@@ -66,7 +59,7 @@ function StatCard({ label, value, icon: Icon, iconColor, iconBg, trend, index = 
             <Icon className="h-5 w-5" style={{ color: iconColor }} />
           </div>
         </div>
-        {/* Decoration */}
+        {/* Decoration circle */}
         <div
           className="absolute -right-4 -bottom-4 h-16 w-16 rounded-full opacity-10"
           style={{ background: iconBg }}
@@ -83,21 +76,19 @@ export function DashboardStats() {
   const total          = tasks.length;
   const completed      = tasks.filter((t) => t.status === 'completed').length;
   const inProgress     = tasks.filter((t) => t.status === 'in_progress').length;
-  const overdue        = tasks.filter((t) => {
-    return t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed';
-  }).length;
+  const overdue        = tasks.filter((t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed').length;
   const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   const stats: StatCardProps[] = [
-    { label: 'Total Tasks',      value: total,            icon: ListTodo,      iconColor: '#6370f5', iconBg: 'rgba(99,112,245,0.12)',  trend: 12 },
-    { label: 'Completed',        value: completed,        icon: CheckCircle2,  iconColor: '#10b981', iconBg: 'rgba(16,185,129,0.12)',  trend: 8  },
-    { label: 'In Progress',      value: inProgress,       icon: Clock,         iconColor: '#3b82f6', iconBg: 'rgba(59,130,246,0.12)'        },
-    { label: 'Overdue',          value: overdue,          icon: AlertTriangle, iconColor: '#ef4444', iconBg: 'rgba(239,68,68,0.12)',   trend: -5 },
-    { label: 'Completion Rate',  value: `${completionRate}%`, icon: Zap,       iconColor: '#f59e0b', iconBg: 'rgba(245,158,11,0.12)',  trend: 3  },
+    { label: 'Total Tasks',     value: total,            icon: ListTodo,      iconColor: '#6370f5', iconBg: 'rgba(99,112,245,0.12)',  trend: 12 },
+    { label: 'Completed',       value: completed,        icon: CheckCircle2,  iconColor: '#10b981', iconBg: 'rgba(16,185,129,0.12)',  trend: 8  },
+    { label: 'In Progress',     value: inProgress,       icon: Clock,         iconColor: '#3b82f6', iconBg: 'rgba(59,130,246,0.12)'        },
+    { label: 'Overdue',         value: overdue,          icon: AlertTriangle, iconColor: '#ef4444', iconBg: 'rgba(239,68,68,0.12)',   trend: -5 },
+    { label: 'Completion Rate', value: `${completionRate}%`, icon: Zap,       iconColor: '#f59e0b', iconBg: 'rgba(245,158,11,0.12)',  trend: 3  },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
       {stats.map((s, i) => <StatCard key={s.label} {...s} index={i} />)}
     </div>
   );
@@ -109,7 +100,7 @@ export function WeeklyChart() {
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
       <Card>
-        <h3 className="font-semibold mb-4" style={{ color: 'var(--text)' }}>Weekly Activity</h3>
+        <h3 className="font-semibold mb-4 text-[var(--text)]">Weekly Activity</h3>
         <ResponsiveContainer width="100%" height={220}>
           <AreaChart data={WEEKLY_DATA} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
             <defs>
@@ -148,7 +139,7 @@ export function CategoryPieChart() {
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
       <Card>
-        <h3 className="font-semibold mb-4" style={{ color: 'var(--text)' }}>Tasks by Category</h3>
+        <h3 className="font-semibold mb-4 text-[var(--text)]">Tasks by Category</h3>
         <ResponsiveContainer width="100%" height={220}>
           <PieChart>
             <Pie data={data} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={4} dataKey="value">
@@ -176,7 +167,7 @@ export function PriorityBarChart() {
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
       <Card>
-        <h3 className="font-semibold mb-4" style={{ color: 'var(--text)' }}>Tasks by Priority</h3>
+        <h3 className="font-semibold mb-4 text-[var(--text)]">Tasks by Priority</h3>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />

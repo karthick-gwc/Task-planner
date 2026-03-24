@@ -15,7 +15,7 @@ export function CalendarPage() {
 
   return (
     // <div className="flex flex-col h-full w-full gap-4 md:gap-6">
-    <div className="flex-1 overflow-hidden rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900 to-gray-950 shadow-lg">
+    <div className="flex-1 overflow-hidden rounded-2xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
 
@@ -43,7 +43,7 @@ export function CalendarPage() {
       </div>
 
       {/* Calendar */}
-      <div className="flex-1 overflow-hidden rounded-xl border border-gray-800 bg-gray-900">
+      <div className="flex-1 overflow-hidden rounded-xl border">
         <CalendarView onTaskClick={handleTaskClick} />
       </div>
 

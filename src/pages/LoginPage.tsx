@@ -23,6 +23,7 @@ export function LoginPage() {
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
+  const [errors,   setErrors]   = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (isAuthenticated) navigate('/dashboard');
@@ -32,19 +33,46 @@ export function LoginPage() {
     if (error) { toast.error(error); dispatch(clearError()); }
   }, [error, dispatch]);
 
+  const validateField = (field: string, value: string) => {
+    const e: Record<string, string> = { ...errors };
+    if (field === 'email') {
+      if (!value.trim()) e.email = 'Email is required';
+      else if (!/\S+@\S+\.\S+/.test(value)) e.email = 'Enter a valid email';
+      else delete e.email;
+    }
+    if (field === 'password') {
+      if (!value) e.password = 'Password is required';
+      else delete e.password;
+    }
+    setErrors(e);
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEmail(value);
+    validateField('email', value);
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPassword(value);
+    validateField('password', value);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password) {
-      toast.error('Please enter your email and password.');
-      return;
-    }
+    const validationErrors: Record<string, string> = {};
+    if (!email.trim()) validationErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(email)) validationErrors.email = 'Enter a valid email';
+    if (!password) validationErrors.password = 'Password is required';
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
     await dispatch(loginUser({ email: email.trim(), password }));
   };
 
   return (
     <div
-      className="min-h-screen w-full flex flex-col lg:flex-row"
-      style={{ background: 'var(--surface)' }}
+      className="min-h-screen w-full flex flex-col lg:flex-row bg-[var(--surface)]"
     >
       {/* ══════════════════════════════════════════
           LEFT — Brand panel (hidden on mobile)
@@ -111,18 +139,13 @@ export function LoginPage() {
             style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
           >
             {FEATURES.map((f) => (
-              <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#e0e9ff' }}>
+              <div key={f} className="flex items-center gap-3 text-[#e0e9ff]">
                 <div
-                  style={{
-                    width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                    background: 'rgba(99,112,245,0.3)',
-                    border: '1px solid rgba(161,140,253,0.4)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
+                  className="w-[22px] h-[22px] rounded-full flex-shrink-0 bg-[rgba(99,112,245,0.3)] border border-[rgba(161,140,253,0.4)] flex items-center justify-center"
                 >
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#a5bcfd' }} />
+                  <div className="w-[6px] h-[6px] rounded-full bg-[#a5bcfd]" />
                 </div>
-                <span style={{ fontSize: '0.875rem' }}>{f}</span>
+                <span className="text-sm">{f}</span>
               </div>
             ))}
           </motion.div>
@@ -133,18 +156,16 @@ export function LoginPage() {
           RIGHT — Form panel
       ══════════════════════════════════════════ */}
       <div
-        className="flex-1 lg:flex-none flex items-center justify-center"
+        className="flex-1 lg:flex-none flex items-center justify-center bg-[var(--surface-2)] p-[clamp(24px,5vw,48px)]"
         style={{
-          background:    'var(--surface-2)',
-          width:         '100%',
-          padding:       'clamp(24px, 5vw, 48px) clamp(20px, 5vw, 48px)',
+          width: '100%',
         }}
       >
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          style={{ width: '100%', maxWidth: 400 }}
+          className="w-full max-w-[400px]"
         >
           {/* Mobile-only logo */}
           <div className="flex lg:hidden items-center justify-center gap-2 mb-10">
@@ -154,26 +175,25 @@ export function LoginPage() {
             >
               <Zap className="h-5 w-5 text-white" />
             </div>
-            <span className="font-display font-bold text-xl" style={{ color: 'var(--text)' }}>
+            <span className="font-display font-bold text-xl text-[var(--text)]">
               TaskFlow
             </span>
           </div>
 
           {/* Heading */}
-          <div style={{ marginBottom: 32 }}>
+          <div className="mb-8">
             <h2
-              className="font-display font-bold"
-              style={{ fontSize: 'clamp(1.6rem, 4vw, 2rem)', color: 'var(--text)', marginBottom: 6 }}
+              className="font-display font-bold text-[clamp(1.6rem,4vw,2rem)] text-[var(--text)] mb-2"
             >
               Welcome back
             </h2>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+            <p className="text-sm text-[var(--text-muted)]">
               Sign in to continue to your workspace
             </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
             {/* Email */}
             <Input
@@ -181,21 +201,22 @@ export function LoginPage() {
               type="email"
               placeholder="you@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
               leftIcon={<Mail className="h-4 w-4" />}
+              error={errors.email}
               required
               autoComplete="email"
               autoFocus
             />
 
             {/* Password */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="flex flex-col gap-1.5">
               <Input
                 label="Password"
                 type={showPass ? 'text' : 'password'}
                 placeholder="Enter your password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={handlePasswordChange}
                 leftIcon={<Lock className="h-4 w-4" />}
                 rightIcon={
                   <button
@@ -212,53 +233,18 @@ export function LoginPage() {
                     {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 }
+                error={errors.password}
                 required
                 autoComplete="current-password"
               />
             </div>
 
             {/* Submit */}
-            <div style={{ marginTop: 4 }}>
+            <div className="mt-1">
               <button
                 type="submit"
                 disabled={isLoading}
-                style={{
-                  width:          '100%',
-                  height:         48,
-                  borderRadius:   12,
-                  border:         'none',
-                  cursor:         isLoading ? 'not-allowed' : 'pointer',
-                  background:     isLoading ? '#7e7ef5' : '#5655ea',
-                  color:          '#fff',
-                  fontSize:       '0.95rem',
-                  fontWeight:     600,
-                  display:        'flex',
-                  alignItems:     'center',
-                  justifyContent: 'center',
-                  gap:            8,
-                  transition:     'background 0.2s, transform 0.1s, box-shadow 0.2s',
-                  boxShadow:      isLoading ? 'none' : '0 4px 14px rgba(86,85,234,0.35)',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isLoading) {
-                    e.currentTarget.style.background  = '#4a44d0';
-                    e.currentTarget.style.transform   = 'translateY(-1px)';
-                    e.currentTarget.style.boxShadow   = '0 6px 20px rgba(86,85,234,0.45)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isLoading) {
-                    e.currentTarget.style.background  = '#5655ea';
-                    e.currentTarget.style.transform   = 'translateY(0)';
-                    e.currentTarget.style.boxShadow   = '0 4px 14px rgba(86,85,234,0.35)';
-                  }
-                }}
-                onMouseDown={(e) => {
-                  if (!isLoading) e.currentTarget.style.transform = 'translateY(0) scale(0.98)';
-                }}
-                onMouseUp={(e) => {
-                  if (!isLoading) e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
+                className="w-full h-12 rounded-lg border-none cursor-pointer disabled:cursor-not-allowed disabled:bg-[#7e7ef5] bg-[#5655ea] text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-200 disabled:shadow-none shadow-[0_4px_14px_rgba(86,85,234,0.35)] hover:bg-[#4a44d0] hover:shadow-[0_6px_20px_rgba(86,85,234,0.45)] active:scale-95"
               >
                 {isLoading ? (
                   <>
@@ -283,46 +269,19 @@ export function LoginPage() {
 
           {/* Divider */}
           <div
-            style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              margin: '24px 0', color: 'var(--text-muted)',
-            }}
+            className="flex items-center gap-3 my-6 text-[var(--text-muted)]"
           >
-            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-            <span style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+            <div className="flex-1 h-px bg-[var(--border)]" />
+            <span className="text-xs whitespace-nowrap">
               Don't have an account?
             </span>
-            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            <div className="flex-1 h-px bg-[var(--border)]" />
           </div>
 
           {/* Register link */}
           <Link
             to="/register"
-            style={{
-              display:        'flex',
-              alignItems:     'center',
-              justifyContent: 'center',
-              width:          '100%',
-              height:         46,
-              borderRadius:   12,
-              border:         '1.5px solid var(--border)',
-              background:     'transparent',
-              color:          'var(--text)',
-              fontSize:       '0.9rem',
-              fontWeight:     500,
-              textDecoration: 'none',
-              transition:     'border-color 0.2s, background 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#6370f5';
-              e.currentTarget.style.background  = 'rgba(99,112,245,0.06)';
-              e.currentTarget.style.color       = '#6370f5';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.background  = 'transparent';
-              e.currentTarget.style.color       = 'var(--text)';
-            }}
+            className="flex items-center justify-center w-full h-11.5 rounded-lg border-1.5 border-[var(--border)] bg-transparent text-[var(--text)] text-sm font-medium no-underline transition-all duration-200 hover:border-[#6370f5] hover:bg-[rgba(99,112,245,0.06)] hover:text-[#6370f5]"
           >
             Create a free account
           </Link>

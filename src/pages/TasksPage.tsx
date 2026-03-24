@@ -36,7 +36,7 @@ export function TasksPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div className="flex flex-col gap-5 max-w-[1200px] mx-auto w-full px-3 sm:px-4 lg:px-6">
 
       {/* ── Page Header ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -93,7 +93,7 @@ export function TasksPage() {
 
       {/* ── Task Grid / List ── */}
       {isLoading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill,minmax(280px,1fr))' : '1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill,minmax(280px,1fr))' : '1fr', gap: 16, gridAutoRows: viewMode === 'grid' ? '1fr' : 'auto' }}>
           {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
         </div>
       ) : filteredTasks.length === 0 ? (
@@ -126,6 +126,7 @@ export function TasksPage() {
               display: 'grid',
               gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill,minmax(280px,1fr))' : '1fr',
               gap: 16,
+              gridAutoRows: viewMode === 'grid' ? '1fr' : 'auto',
             }}
           >
             {filteredTasks.map((task) => (

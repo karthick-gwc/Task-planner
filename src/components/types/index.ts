@@ -8,11 +8,15 @@ export interface User {
   email: string;
   role: UserRole;
   avatar?: string;
+  manager_id?: string; // ID of the assigned manager
+  assigned_by?: string; // ID of who assigned the manager
+  assigned_at?: string; // When the manager was assigned
   createdAt: string;
 }
 
 export interface AuthState {
   user: User | null;
+  users: User[];
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -29,6 +33,22 @@ export interface RegisterCredentials {
   email: string;
   password: string;
   role?: UserRole;
+}
+
+// ─── Manager Assignment ───────────────────────────────────────────────────────
+
+export interface AssignManagerDto {
+  employee_id: string;
+  manager_id: string;
+  assigned_by: string;
+}
+
+export interface ManagerAssignment {
+  id: string;
+  employee_id: string;
+  manager_id: string;
+  assigned_by: string;
+  assigned_at: string;
 }
 
 // ─── Task ─────────────────────────────────────────────────────────────────────

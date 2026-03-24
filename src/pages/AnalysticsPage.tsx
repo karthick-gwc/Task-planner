@@ -10,9 +10,12 @@ import { MOCK_USERS } from '../components/utils';
 
 export function AnalyticsPage() {
   const { tasks } = useAppSelector((s) => s.tasks);
+  const { users } = useAppSelector((s) => s.auth);
+
+  const teamMembers = users && users.length > 0 ? users : MOCK_USERS;
 
   // Team performance data
-  const teamStats = MOCK_USERS.map((user) => {
+  const teamStats = teamMembers.map((user) => {
     const userTasks = tasks.filter((t) => t.assigned_to === user.id);
     const completed = userTasks.filter((t) => t.status === 'completed').length;
     const rate = userTasks.length > 0 ? Math.round((completed / userTasks.length) * 100) : 0;
@@ -26,7 +29,7 @@ export function AnalyticsPage() {
     .slice(0, 5);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in max-w-[1200px] mx-auto w-full px-3 sm:px-4 lg:px-6">
       <div>
         <h1 className="text-2xl font-bold font-display text-[var(--text)]">Analytics</h1>
         <p className="text-sm text-[var(--text-muted)] mt-0.5">Your productivity insights and task performance</p>

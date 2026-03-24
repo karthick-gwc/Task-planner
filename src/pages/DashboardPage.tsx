@@ -50,7 +50,7 @@ export function DashboardPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div className="flex flex-col gap-6 max-w-[1200px] mx-auto w-full px-3 sm:px-4 lg:px-6">
 
       {/* ── Welcome Banner ── */}
       <motion.div
@@ -105,8 +105,7 @@ export function DashboardPage() {
       }
 
       {/* ── Main Grid ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,2fr) minmax(0,1fr)', gap: 24 }}
-           className="lg-grid-cols-3 flex flex-col lg:grid">
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
         {/* Recent Tasks */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

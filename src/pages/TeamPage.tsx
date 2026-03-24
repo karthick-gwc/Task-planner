@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Mail, Shield, CheckCircle, Clock, AlertTriangle, X } from 'lucide-react';
-import { useAppSelector } from '../hooks/useAppRedux';
+import { Users, Mail, Shield, CheckCircle, Clock, AlertTriangle, X, UserCog } from 'lucide-react';
+import { useAppSelector, useAppDispatch } from '../hooks/useAppRedux';
 import { Avatar } from '../components/ui';
-import { MOCK_USERS } from '../components/utils';
+import { fetchAllUsers } from '../components/store/slices/authSlice';
+import { AssignManagerModal } from '../components/ui/AssignManagerModal';
 
 const ROLE_STYLE: Record<string, { bg: string; color: string }> = {
   admin:    { bg: 'rgba(239,68,68,0.1)',   color: '#f87171' },
@@ -12,10 +13,27 @@ const ROLE_STYLE: Record<string, { bg: string; color: string }> = {
 };
 
 export function TeamPage() {
+  const dispatch = useAppDispatch();
   const { tasks } = useAppSelector((s) => s.tasks);
+  const { user, users } = useAppSelector((s) => s.auth);
   const [selected, setSelected] = useState<string | null>(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
 
-  const teamData = MOCK_USERS.map((user) => {
+  useEffect(() => {
+    if (users.length === 0) {
+      dispatch(fetchAllUsers());
+    }
+  }, [dispatch, users.length]);
+
+  // Filter users based on current user's role
+  const visibleUsers = users.filter((u) => {
+    if (user?.role === 'admin') return true; // Admin sees all
+    if (user?.role === 'manager') return u.manager_id === user.id || u.id === user.id; // Manager sees themselves and their employees
+    return u.id === user?.id; // Employee sees only themselves
+  });
+
+  const teamData = visibleUsers.map((user) => {
     const userTasks = tasks.filter((t) => t.assigned_to === user.id);
     return {
       ...user,
@@ -40,7 +58,7 @@ export function TeamPage() {
           Team
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: 5 }}>
-          {MOCK_USERS.length} member{MOCK_USERS.length !== 1 ? 's' : ''}
+          {visibleUsers.length} member{visibleUsers.length !== 1 ? 's' : ''}
         </p>
       </div>
 
@@ -135,14 +153,48 @@ export function TeamPage() {
                       <Shield style={{ width: 12, height: 12 }} />
                       {selectedUser.role}
                     </p>
+                    {selectedUser.manager_id && (
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: 2 }}>
+                        Manager: {users.find(u => u.id === selectedUser.manager_id)?.name || 'Unknown'}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelected(null)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}
-                >
-                  <X style={{ width: 16, height: 16 }} />
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {(user?.role === 'admin' || user?.role === 'manager') && selectedUser.role === 'employee' && (
+                    <button
+                      onClick={() => {
+                        setSelectedEmployee(selectedUser);
+                        setAssignModalOpen(true);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#3b82f6',
+                        padding: '8px',
+                        borderRadius: 8,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        fontSize: '0.8rem',
+                        fontWeight: 500,
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(59,130,246,0.1)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                    >
+                      <UserCog style={{ width: 14, height: 14 }} />
+                      Assign Manager
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSelected(null)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}
+                  >
+                    <X style={{ width: 16, height: 16 }} />
+                  </button>
+                </div>
               </div>
 
               {/* Tasks */}
@@ -177,6 +229,15 @@ export function TeamPage() {
           <div />
         )}
       </div>
+
+      <AssignManagerModal
+        isOpen={assignModalOpen}
+        onClose={() => {
+          setAssignModalOpen(false);
+          setSelectedEmployee(null);
+        }}
+        employee={selectedEmployee}
+      />
     </div>
   );
 }

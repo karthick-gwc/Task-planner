@@ -7,83 +7,110 @@ import { Avatar } from '../components/ui';
 import { Input } from '../components/ui/Input';
 import toast from 'react-hot-toast';
 
-const Section = ({ icon, title, children, delay = 0 }: { icon: React.ReactNode; title: string; children: React.ReactNode; delay?: number }) => (
+// ─── Section wrapper ───────────────────────────────────────────────────────────
+const Section = ({
+  icon,
+  title,
+  children,
+  delay = 0,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+  delay?: number;
+}) => (
   <motion.div
     initial={{ opacity: 0, y: 14 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay, duration: 0.35 }}
-    style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 18, padding: '24px', marginBottom: 0 }}
+    className="bg-[var(--surface-2)] border border-[var(--border)] rounded-2xl p-5 sm:p-6"
   >
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
-      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 10, background: 'rgba(99,112,245,0.12)', flexShrink: 0 }}>
+    {/* Section header */}
+    <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-[var(--border)]">
+      <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-brand-500/10 shrink-0">
         {icon}
       </span>
-      <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.95rem', fontFamily: 'Sora,sans-serif', margin: 0 }}>{title}</h2>
+      <h2 className="text-[var(--text)] font-bold text-[0.95rem] font-display m-0">{title}</h2>
     </div>
     {children}
   </motion.div>
 );
 
+// ─── Toggle switch ─────────────────────────────────────────────────────────────
 const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
   <button
     onClick={onChange}
-    style={{
-      position: 'relative', width: 44, height: 24, borderRadius: 99, border: 'none',
-      background: checked ? '#5655ea' : 'var(--border)', cursor: 'pointer',
-      transition: 'background 0.2s', flexShrink: 0,
-    }}
+    aria-checked={checked}
+    role="switch"
+    className={`relative w-11 h-6 rounded-full border-none cursor-pointer transition-colors duration-200 shrink-0 focus-visible:outline-2 focus-visible:outline-brand-500 focus-visible:outline-offset-2 ${
+      checked ? 'bg-brand-600' : 'bg-[var(--border)]'
+    }`}
   >
-    <span style={{
-      position: 'absolute', top: 2, left: 2, width: 20, height: 20,
-      borderRadius: '50%', background: '#fff',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-      transition: 'transform 0.2s',
-      transform: checked ? 'translateX(20px)' : 'translateX(0)',
-    }} />
+    <span
+      className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${
+        checked ? 'translate-x-5' : 'translate-x-0'
+      }`}
+    />
   </button>
 );
 
+// ─── Main component ────────────────────────────────────────────────────────────
 export function SettingsPage() {
-  const dispatch = useAppDispatch();
-  const { theme } = useAppSelector((s) => s.ui);
-  const { user }  = useAppSelector((s) => s.auth);
-  const [name, setName] = useState(user?.name || '');
-  const [notif, setNotif] = useState({ email: true, inApp: true, overdue: true, reminder: true });
+  const dispatch        = useAppDispatch();
+  const { theme }       = useAppSelector((s) => s.ui);
+  const { user }        = useAppSelector((s) => s.auth);
+  const [name, setName] = useState(user?.name ?? '');
+  const [notif, setNotif] = useState({
+    email:    true,
+    inApp:    true,
+    overdue:  true,
+    reminder: true,
+  });
 
   const handleSave = () => toast.success('Settings saved!');
 
-  const NOTIF_ITEMS = [
-    { key: 'email',    label: 'Email Notifications',   desc: 'Receive task reminders via email' },
-    { key: 'inApp',    label: 'In-App Notifications',  desc: 'Show notifications inside the app' },
-    { key: 'overdue',  label: 'Overdue Alerts',         desc: 'Alert when tasks become overdue' },
-    { key: 'reminder', label: 'Due Date Reminders',     desc: 'Remind me 24h before due date' },
+  const NOTIF_ITEMS: { key: keyof typeof notif; label: string; desc: string }[] = [
+    { key: 'email',    label: 'Email Notifications',  desc: 'Receive task reminders via email' },
+    { key: 'inApp',    label: 'In-App Notifications', desc: 'Show notifications inside the app' },
+    { key: 'overdue',  label: 'Overdue Alerts',        desc: 'Alert when tasks become overdue' },
+    { key: 'reminder', label: 'Due Date Reminders',    desc: 'Remind me 24 h before due date' },
   ];
 
   return (
-    <div style={{ maxWidth: 640, display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div className="w-full max-w-2xl mx-auto flex flex-col gap-5 pb-8 px-4 sm:px-0">
 
-      {/* Page heading */}
+      {/* ── Page heading ── */}
       <div>
-        <h1 style={{ color: 'var(--text)', fontWeight: 700, fontSize: 'clamp(1.3rem,2.5vw,1.6rem)', fontFamily: 'Sora,sans-serif', margin: 0 }}>
+        <h1 className="text-[var(--text)] font-bold text-2xl sm:text-[1.6rem] font-display m-0">
           Settings
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: 5 }}>
+        <p className="text-[var(--text-muted)] text-sm mt-1.5">
           Manage your preferences and account
         </p>
       </div>
 
-      {/* ── Profile ── */}
-      <Section icon={<User style={{ width: 16, height: 16, color: '#6370f5' }} />} title="Profile">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20, padding: '14px 16px', borderRadius: 12, background: 'var(--surface-3)' }}>
+      {/* ══════════════════════════════════════════════════════════════
+          PROFILE
+      ══════════════════════════════════════════════════════════════ */}
+      <Section
+        icon={<User className="w-4 h-4 text-brand-500" />}
+        title="Profile"
+      >
+        {/* Avatar row */}
+        <div className="flex items-center gap-3.5 mb-5 p-3.5 sm:p-4 rounded-xl bg-[var(--surface-3)]">
           {user && <Avatar name={user.name} size="lg" />}
-          <div style={{ minWidth: 0 }}>
-            <p style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.95rem', margin: 0 }}>{user?.name}</p>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: 3, textTransform: 'capitalize' }}>
+          <div className="min-w-0">
+            <p className="text-[var(--text)] font-semibold text-[0.95rem] m-0 truncate">
+              {user?.name}
+            </p>
+            <p className="text-[var(--text-muted)] text-xs mt-1 capitalize truncate">
               {user?.role} · {user?.email}
             </p>
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        {/* Form fields */}
+        <div className="flex flex-col gap-3.5">
           <Input
             label="Display Name"
             value={name}
@@ -92,44 +119,54 @@ export function SettingsPage() {
           />
           <Input
             label="Email Address"
-            value={user?.email || ''}
+            value={user?.email ?? ''}
             disabled
             helperText="Email cannot be changed"
-            style={{ opacity: 0.6 }}
+            className="opacity-60"
           />
         </div>
       </Section>
 
-      {/* ── Appearance ── */}
-      <Section icon={<Palette style={{ width: 16, height: 16, color: '#6370f5' }} />} title="Appearance" delay={0.08}>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: 14 }}>Choose your preferred theme</p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      {/* ══════════════════════════════════════════════════════════════
+          APPEARANCE
+      ══════════════════════════════════════════════════════════════ */}
+      <Section
+        icon={<Palette className="w-4 h-4 text-brand-500" />}
+        title="Appearance"
+        delay={0.08}
+      >
+        <p className="text-[var(--text-muted)] text-sm mb-3.5">
+          Choose your preferred theme
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {(['light', 'dark'] as const).map((t) => {
             const active = theme === t;
             return (
               <button
                 key={t}
                 onClick={() => dispatch(setTheme(t))}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px',
-                  borderRadius: 14, border: `2px solid ${active ? '#6370f5' : 'var(--border)'}`,
-                  background: active ? 'rgba(99,112,245,0.08)' : 'var(--surface-3)',
-                  cursor: 'pointer', transition: 'border-color 0.2s, background 0.2s', textAlign: 'left',
-                }}
+                className={`flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 text-left w-full ${
+                  active
+                    ? 'border-brand-500 bg-brand-500/8'
+                    : 'border-[var(--border)] bg-[var(--surface-3)] hover:border-brand-400/50'
+                }`}
               >
                 {t === 'light'
-                  ? <Sun style={{ width: 20, height: 20, color: '#f59e0b', flexShrink: 0 }} />
-                  : <Moon style={{ width: 20, height: 20, color: '#8196fa', flexShrink: 0 }} />
+                  ? <Sun  className="w-5 h-5 text-amber-400 shrink-0" />
+                  : <Moon className="w-5 h-5 text-brand-400 shrink-0" />
                 }
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.85rem', margin: 0, textTransform: 'capitalize' }}>{t} Mode</p>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.72rem', marginTop: 2 }}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[var(--text)] font-semibold text-sm m-0 capitalize">
+                    {t} Mode
+                  </p>
+                  <p className="text-[var(--text-muted)] text-[0.72rem] mt-0.5">
                     {t === 'light' ? 'Clean and bright' : 'Easy on the eyes'}
                   </p>
                 </div>
                 {active && (
-                  <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#5655ea', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Check style={{ width: 10, height: 10, color: '#fff' }} />
+                  <span className="w-[18px] h-[18px] rounded-full bg-brand-600 flex items-center justify-center shrink-0">
+                    <Check className="w-2.5 h-2.5 text-white" />
                   </span>
                 )}
               </button>
@@ -138,39 +175,47 @@ export function SettingsPage() {
         </div>
       </Section>
 
-      {/* ── Notifications ── */}
-      <Section icon={<Bell style={{ width: 16, height: 16, color: '#6370f5' }} />} title="Notifications" delay={0.16}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-          {NOTIF_ITEMS.map(({ key, label, desc }, i) => (
+      {/* ══════════════════════════════════════════════════════════════
+          NOTIFICATIONS
+      ══════════════════════════════════════════════════════════════ */}
+      <Section
+        icon={<Bell className="w-4 h-4 text-brand-500" />}
+        title="Notifications"
+        delay={0.16}
+      >
+        <div className="flex flex-col divide-y divide-[var(--border)]">
+          {NOTIF_ITEMS.map(({ key, label, desc }) => (
             <div
               key={key}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-                padding: '13px 0',
-                borderBottom: i < NOTIF_ITEMS.length - 1 ? '1px solid var(--border)' : 'none',
-              }}
+              className="flex items-center justify-between gap-4 py-3.5 first:pt-0 last:pb-0"
             >
-              <div>
-                <p style={{ color: 'var(--text)', fontWeight: 500, fontSize: '0.875rem', margin: 0 }}>{label}</p>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.775rem', marginTop: 2 }}>{desc}</p>
+              <div className="min-w-0">
+                <p className="text-[var(--text)] font-medium text-sm m-0">{label}</p>
+                <p className="text-[var(--text-muted)] text-[0.775rem] mt-0.5">{desc}</p>
               </div>
               <Toggle
-                checked={notif[key as keyof typeof notif]}
-                onChange={() => setNotif((n) => ({ ...n, [key]: !n[key as keyof typeof n] }))}
+                checked={notif[key]}
+                onChange={() => setNotif((n) => ({ ...n, [key]: !n[key] }))}
               />
             </div>
           ))}
         </div>
       </Section>
 
-      {/* ── Role ── */}
-      <Section icon={<Shield style={{ width: 16, height: 16, color: '#6370f5' }} />} title="Role & Permissions" delay={0.24}>
-        <div style={{ padding: '14px 16px', borderRadius: 12, background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
-          <p style={{ color: 'var(--text)', fontWeight: 500, fontSize: '0.875rem', margin: '0 0 6px' }}>
+      {/* ══════════════════════════════════════════════════════════════
+          ROLE & PERMISSIONS
+      ══════════════════════════════════════════════════════════════ */}
+      <Section
+        icon={<Shield className="w-4 h-4 text-brand-500" />}
+        title="Role & Permissions"
+        delay={0.24}
+      >
+        <div className="p-3.5 sm:p-4 rounded-xl bg-[var(--surface-3)] border border-[var(--border)]">
+          <p className="text-[var(--text)] font-medium text-sm m-0 mb-1.5">
             Current Role:{' '}
-            <span style={{ color: '#8196fa', fontWeight: 700, textTransform: 'capitalize' }}>{user?.role}</span>
+            <span className="text-brand-400 font-bold capitalize">{user?.role}</span>
           </p>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: 0, lineHeight: 1.6 }}>
+          <p className="text-[var(--text-muted)] text-[0.78rem] m-0 leading-relaxed">
             {user?.role === 'admin'    && 'Full access — manage users, all tasks, and system settings.'}
             {user?.role === 'manager'  && 'Team management — assign tasks, view team analytics.'}
             {user?.role === 'employee' && 'Personal tasks — manage your own tasks and view dashboard.'}
@@ -179,19 +224,12 @@ export function SettingsPage() {
       </Section>
 
       {/* ── Save button ── */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', paddingBottom: 8 }}>
+      <div className="flex justify-end pt-1 pb-2">
         <button
           onClick={handleSave}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8, padding: '11px 24px',
-            borderRadius: 12, border: 'none', background: '#5655ea', color: '#fff',
-            fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
-            boxShadow: '0 3px 12px rgba(86,85,234,0.3)', transition: 'background 0.2s',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = '#4a44d0')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = '#5655ea')}
+          className="flex items-center gap-2 px-6 py-2.5 rounded-xl border-none bg-brand-600 text-white text-sm font-semibold cursor-pointer shadow-[0_3px_12px_rgba(86,85,234,0.3)] transition-colors duration-200 hover:bg-brand-700 active:scale-[0.97]"
         >
-          <Save style={{ width: 15, height: 15 }} />
+          <Save className="w-4 h-4" />
           Save Changes
         </button>
       </div>

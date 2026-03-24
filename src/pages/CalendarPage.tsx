@@ -8,42 +8,54 @@ export function CalendarPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
 
-  const handleTaskClick = (task: Task) => { setEditTask(task); setFormOpen(true); };
+  const handleTaskClick = (task: Task) => {
+    setEditTask(task);
+    setFormOpen(true);
+  };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 20 }}>
+    // <div className="flex flex-col h-full w-full gap-4 md:gap-6">
+    <div className="flex-1 overflow-hidden rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900 to-gray-950 shadow-lg">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', flexShrink: 0 }}>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+
+        {/* Title */}
         <div>
-          <h1 style={{ color: 'var(--text)', fontWeight: 700, fontSize: 'clamp(1.3rem,2.5vw,1.6rem)', fontFamily: 'Sora,sans-serif', margin: 0 }}>
+          <h1 className="text-xl sm:text-2xl font-bold text-white">
             Calendar
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: 5 }}>
+          <p className="text-xs sm:text-sm text-gray-400 mt-1">
             View and manage your tasks by date
           </p>
         </div>
+
+        {/* Button */}
         <button
-          onClick={() => { setEditTask(null); setFormOpen(true); }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px',
-            borderRadius: 12, border: 'none', background: '#5655ea', color: '#fff',
-            fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-            boxShadow: '0 3px 12px rgba(86,85,234,0.3)', transition: 'background 0.2s',
+          onClick={() => {
+            setEditTask(null);
+            setFormOpen(true);
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = '#4a44d0')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = '#5655ea')}
+          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-md transition w-full sm:w-auto"
         >
-          <Plus style={{ width: 15, height: 15 }} />
+          <Plus className="w-4 h-4" />
           New Task
         </button>
       </div>
 
       {/* Calendar */}
-      <div style={{ flex: 1, overflow: 'hidden' }}>
+      <div className="flex-1 overflow-hidden rounded-xl border border-gray-800 bg-gray-900">
         <CalendarView onTaskClick={handleTaskClick} />
       </div>
 
-      <TaskForm isOpen={formOpen} onClose={() => { setFormOpen(false); setEditTask(null); }} task={editTask} />
+      {/* Task Form Modal */}
+      <TaskForm
+        isOpen={formOpen}
+        onClose={() => {
+          setFormOpen(false);
+          setEditTask(null);
+        }}
+        task={editTask}
+      />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { useAppDispatch, useAppSelector } from '../../hooks/useAppRedux';
 import toast from 'react-hot-toast';
 import { createTask, updateTask } from '../store/slices/taskSlice';
 import { MOCK_USERS } from '../utils';
-
+import {fetchAllUsers, assignManager } from '@/components/store/slices/authSlice';  
 
 
 interface TaskFormProps {
@@ -30,7 +30,7 @@ const defaultForm: CreateTaskDto = {
 
 export function TaskForm({ isOpen, onClose, task }: TaskFormProps) {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((s) => s.auth);
+  const { user, users } = useAppSelector((s) => s.auth);
   const { tasks } = useAppSelector((s) => s.tasks);
   const [form, setForm] = useState<CreateTaskDto>(defaultForm);
   const [tagInput, setTagInput] = useState('');
@@ -64,6 +64,15 @@ export function TaskForm({ isOpen, onClose, task }: TaskFormProps) {
     setErrors(e);
     return Object.keys(e).length === 0;
   };
+
+  
+useEffect(() => {
+  if (!users || users.length === 0) {
+    dispatch(fetchAllUsers());
+  }
+}, [dispatch, users?.length]);
+
+const employees = (users && users.length > 0 ? users : MOCK_USERS).filter((u) => u.role === 'employee');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,15 +185,19 @@ export function TaskForm({ isOpen, onClose, task }: TaskFormProps) {
               onChange={(e) => set('due_date', e.target.value)}
               error={errors.due_date}
             />
+            
             <Select
-              label="Assign To"
-              value={form.assigned_to || ''}
-              onChange={(e) => set('assigned_to', e.target.value)}
-              options={[
-                { value: '', label: 'Unassigned' },
-                ...MOCK_USERS.map((u) => ({ value: u.id, label: u.name })),
-              ]}
-            />
+  label="Assign To"
+  value={form.assigned_to || ''}
+  onChange={(e) => set('assigned_to', e.target.value)}
+  options={[
+    { value: '', label: 'Unassigned' },
+    ...employees.map((u) => ({
+      value: u.id,
+      label: u.name,
+    })),
+  ]}
+/>
           </div>
 
           {/* Dependencies */}

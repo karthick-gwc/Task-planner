@@ -5,6 +5,7 @@ import type { Task } from '../types';
 import { cn, formatDate, isOverdue, isDueSoon, priorityLabel, statusLabel } from '../utils';
 import { Badge, Avatar, ProgressBar, Card } from '../ui';
 import { useAppSelector } from '../../hooks/useAppRedux';
+import { TaskComments } from './Taskcomments';
 
 interface TaskCardProps {
   task: Task;
@@ -24,7 +25,9 @@ const PRIORITY_BAR: Record<string, string> = {
 export function TaskCard({ task, onEdit, onDelete, onStatusChange, compact = false }: TaskCardProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
-  const { user } = useAppSelector((s) => s.auth);
+  const { user, users } = useAppSelector((s) => s.auth);
+  const assignee = users?.find((u) => u.id === task.assigned_to);
+  const assigneeName = assignee?.name || (task.assigned_to || 'Unassigned');
 
   const overdue = isOverdue(task.due_date) && task.status !== 'completed';
   const dueSoon = isDueSoon(task.due_date) && task.status !== 'completed';
@@ -67,7 +70,7 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, compact = fal
     >
       <div
         className={cn(
-          'group relative rounded-2xl border transition-all duration-200 overflow-hidden',
+          'group relative rounded-2xl border transition-all duration-200 overflow-hidden h-full',
           task.status === 'completed' && 'opacity-70',
           compact ? 'p-3' : 'p-4'
         )}
@@ -81,7 +84,8 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, compact = fal
           className={cn('absolute left-0 top-0 bottom-0 w-[3px] rounded-l-none', PRIORITY_BAR[task.priority])}
         />
 
-        <div className="pl-3">
+        <div className="pl-3 h-full flex flex-col">
+          <div className="flex-1">
           {/* Top row: badges + menu */}
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
@@ -201,6 +205,7 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, compact = fal
               <ProgressBar value={task.progress} />
             </div>
           )}
+        </div>
 
           {/* Footer */}
           <div
@@ -232,9 +237,9 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, compact = fal
                 </span>
               )}
             </div>
-
+              {/* <TaskComments taskId={task.id}/> */}
             {task.assigned_to && (
-              <Avatar name={task.assigned_to} size="xs" />
+              <Avatar name={assigneeName} size="xs" />
             )}
           </div>
         </div>

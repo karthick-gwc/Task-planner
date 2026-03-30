@@ -15,7 +15,7 @@ export const UserProvider = ({ children }) => {
     let isUserFetched = false;
 
     DomoApi.GetCurrentUser().then((data) => {
-      // console.log("User Data",data);
+      
       
       if (!isUserFetched) {
         const userId = data?.userId;

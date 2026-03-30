@@ -74,7 +74,7 @@ export function DashboardPage() {
           </div>
           <button
             onClick={() => { setEditTask(null); setFormOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/25 bg-white/15 hover:bg-white/25 text-white text-sm font-semibold cursor-pointer transition-all duration-200 shrink-0"
+            className="flex items-center gap-2 px-4 mt-3 py-2.5 rounded-xl border border-white/25 bg-white/15 hover:bg-white/25 text-white text-sm font-semibold cursor-pointer transition-all duration-200 shrink-0"
           >
             <Plus className="w-4 h-4" />
             New Task

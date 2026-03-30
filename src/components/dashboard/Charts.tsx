@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -33,7 +33,7 @@ interface StatCardProps {
 function StatCard({ label, value, icon: Icon, iconColor, iconBg, trend, index = 0 }: StatCardProps) {
   return (
     <motion.div custom={index} initial="hidden" animate="visible" variants={cardVariants}>
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
+      <div className="relative min-h-28 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[11px] font-medium uppercase tracking-wide mb-1.5 text-[var(--text-muted)]">
@@ -88,21 +88,44 @@ export function DashboardStats() {
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2  sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
       {stats.map((s, i) => <StatCard key={s.label} {...s} index={i} />)}
     </div>
   );
 }
 
-// ─── Weekly Chart ─────────────────────────────────────────────────────────────
-
+// ─── Weekly Chart 
 export function WeeklyChart() {
+  const { tasks } = useAppSelector((s) => s.tasks);
+
+  const weeklyData = useMemo(() => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (6 - i)); 
+      const dayLabel = days[date.getDay()];
+      const dateStr  = date.toISOString().split('T')[0]; 
+
+      const completed = tasks.filter(
+        (t) => t.status === 'completed' && t.updatedAt?.startsWith(dateStr)
+      ).length;
+
+      const created = tasks.filter(
+        (t) => t.createdAt?.startsWith(dateStr)
+      ).length;
+
+      return { day: dayLabel, completed, created };
+    });
+  }, [tasks]);
+
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
       <Card>
         <h3 className="font-semibold mb-4 text-[var(--text)]">Weekly Activity</h3>
         <ResponsiveContainer width="100%" height={220}>
-          <AreaChart data={WEEKLY_DATA} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+          <AreaChart data={weeklyData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="gCompleted" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%"  stopColor="#6370f5" stopOpacity={0.25} />
@@ -115,7 +138,7 @@ export function WeeklyChart() {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis dataKey="day" tick={{ fill: 'var(--text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
+            <YAxis allowDecimals={false} tick={{ fill: 'var(--text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
             <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} labelStyle={{ color: 'var(--text)' }} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Area type="monotone" dataKey="completed" stroke="#6370f5" strokeWidth={2} fill="url(#gCompleted)" name="Completed" />

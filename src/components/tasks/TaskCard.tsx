@@ -1,10 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, MoreVertical, Repeat, Link2 } from 'lucide-react';
+import { Calendar, MoreVertical, Repeat, Link2,  MessageSquare, X } from 'lucide-react';
 import type { Task } from '../types';
 import { cn, formatDate, isOverdue, isDueSoon, priorityLabel, statusLabel } from '../utils';
 import { Badge, Avatar, ProgressBar, Card } from '../ui';
 import { useAppSelector } from '../../hooks/useAppRedux';
+import { TaskComments } from './Taskcomments';
+import { createPortal } from 'react-dom';
 
 interface TaskCardProps {
   task: Task;
@@ -23,6 +25,7 @@ const PRIORITY_BAR: Record<string, string> = {
 
 export function TaskCard({ task, onEdit, onDelete, onStatusChange, compact = false }: TaskCardProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [commentsOpen, setCommentsOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
   const { user, users } = useAppSelector((s) => s.auth);
   const assignee = users?.find((u) => u.id === task.assigned_to);
@@ -54,10 +57,11 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, compact = fal
       transition={{ duration: 0.18 }}
     >
       <div className={cn(
-        'group relative rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] transition-all duration-200 overflow-hidden h-full',
-        task.status === 'completed' && 'opacity-70',
-        compact ? 'p-3' : 'p-4'
-      )}>
+  'group relative rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] transition-all duration-200 h-full',
+  menuOpen ? 'overflow-visible' : 'overflow-hidden',   // ← change this
+  task.status === 'completed' && 'opacity-70',
+  compact ? 'p-3' : 'p-4'
+)}>
         {/* Priority bar — left edge */}
         <div className={cn('absolute left-0 top-0 bottom-0 w-[3px]', PRIORITY_BAR[task.priority])} />
 
@@ -80,33 +84,36 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, compact = fal
                 </button>
 
                 {menuOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-44 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl z-20 overflow-hidden py-1">
-                    {(['in_progress', 'completed', 'pending'] as Task['status'][])
-                      .filter((s) => s !== task.status)
-                      .map((s) => (
-                        <button
-                          key={s}
-                          onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleStatusChange(s); }}
-                          className="w-full text-left px-3 py-2 text-xs text-[var(--text)] hover:bg-[var(--surface-3)] transition-colors capitalize"
-                        >
-                          Mark as {s.replace('_', ' ')}
-                        </button>
-                      ))}
-                    <div className="border-t border-[var(--border)] my-0.5" />
-                    <button
-                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(); }}
-                      className="w-full text-left px-3 py-2 text-xs text-[var(--text)] hover:bg-[var(--surface-3)] transition-colors"
-                    >
-                      Edit task
-                    </button>
-                    <button
-                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(); }}
-                      className="w-full text-left px-3 py-2 text-xs text-red-500 hover:bg-red-500/8 transition-colors"
-                    >
-                      Delete task
-                    </button>
-                  </div>
-                )}
+                    <div className={cn(
+                      'absolute right-0 w-44 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl z-50 overflow-hidden py-1',
+                      compact ? 'bottom-full mb-1' : 'top-full mt-1'   // ← opens up in compact
+                    )}>
+                      {(['in_progress', 'completed', 'pending'] as Task['status'][])
+                        .filter((s) => s !== task.status)
+                        .map((s) => (
+                          <button
+                            key={s}
+                            onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleStatusChange(s); }}
+                            className="w-full text-left px-3 py-2 text-xs text-[var(--text)] hover:bg-[var(--surface-3)] transition-colors capitalize"
+                          >
+                            Mark as {s.replace('_', ' ')}
+                          </button>
+                        ))}
+                      <div className="border-t border-[var(--border)] my-0.5" />
+                      <button
+                        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(); }}
+                        className="w-full text-left px-3 py-2 text-xs text-[var(--text)] hover:bg-[var(--surface-3)] transition-colors"
+                      >
+                        Edit task
+                      </button>
+                      <button
+                        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(); }}
+                        className="w-full text-left px-3 py-2 text-xs text-red-500 hover:bg-red-500/8 transition-colors"
+                      >
+                        Delete task
+                      </button>
+                    </div>
+                  )}
               </div>
             </div>
 
@@ -148,33 +155,82 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, compact = fal
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--border)]">
-            <div className="flex items-center gap-3">
-              <span className={cn(
-                'flex items-center gap-1 text-xs',
-                overdue ? 'text-red-500' : dueSoon ? 'text-amber-500' : 'text-[var(--text-muted)]'
-              )}>
-                <Calendar className="h-3 w-3" />
-                {formatDate(task.due_date, 'MMM d')}
-              </span>
+<div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--border)]">
+  <div className="flex items-center gap-3">
+    <span className={cn(
+      'flex items-center gap-1 text-xs',
+      overdue ? 'text-red-500' : dueSoon ? 'text-amber-500' : 'text-[var(--text-muted)]'
+    )}>
+      <Calendar className="h-3 w-3" />
+      {formatDate(task.due_date, 'MMM d')}
+    </span>
 
-              {task.recurrence !== 'none' && (
-                <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                  <Repeat className="h-3 w-3" />
-                  {task.recurrence}
-                </span>
-              )}
+    {task.recurrence !== 'none' && (
+      <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+        <Repeat className="h-3 w-3" />
+        {task.recurrence}
+      </span>
+    )}
 
-              {task.dependencies && task.dependencies.length > 0 && (
-                <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                  <Link2 className="h-3 w-3" />
-                  {task.dependencies.length}
-                </span>
-              )}
-            </div>
+    {task.dependencies && task.dependencies.length > 0 && (
+      <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+        <Link2 className="h-3 w-3" />
+        {task.dependencies.length}
+      </span>
+    )}
+  </div>
 
-            {task.assigned_to && <Avatar name={assigneeName} size="xs" />}
-          </div>
+  {/* Comments + Avatar row */}
+  <div className="flex items-center gap-2">
+    {/* 💬 Comment trigger button */}
+    <button
+      onClick={(e) => { e.stopPropagation(); setCommentsOpen(true); }}
+      className="flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-brand-400 transition-colors group/msg"
+      title="View comments"
+    >
+      <MessageSquare className="h-3.5 w-3.5 group-hover/msg:scale-110 transition-transform" />
+    </button>
+
+    {task.assigned_to && <Avatar name={assigneeName} size="xs" />}
+  </div>
+</div>
+
+{/* ── Slide-in comments panel ── */}
+{commentsOpen &&
+  createPortal(
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
+        onClick={() => setCommentsOpen(false)}
+      />
+
+      {/* Panel */}
+      <motion.div
+        initial={{ x: '100%', opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: '100%', opacity: 0 }}
+        transition={{ type: 'spring', damping: 26, stiffness: 240 }}
+        className="fixed top-0 right-0 h-full w-full max-w-sm z-50 flex flex-col bg-[var(--surface)] border-l border-[var(--border)] shadow-2xl"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
+          <p className="font-semibold text-sm">{task.title}</p>
+
+          <button onClick={() => setCommentsOpen(false)}>
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-hidden">
+          <TaskComments taskId={task.id} />
+        </div>
+      </motion.div>
+    </>,
+    document.body
+  )
+}
         </div>
       </div>
     </motion.div>

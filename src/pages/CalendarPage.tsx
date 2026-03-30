@@ -14,7 +14,6 @@ export function CalendarPage() {
   };
 
   return (
-    // <div className="flex flex-col h-full w-full gap-4 md:gap-6">
     <div className="flex-1 overflow-hidden rounded-2xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">

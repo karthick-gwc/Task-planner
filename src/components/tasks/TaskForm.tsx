@@ -73,7 +73,7 @@ useEffect(() => {
 }, [dispatch, users?.length]);
 
 const employees = (users && users.length > 0 ? users : MOCK_USERS).filter((u) => u.role === 'employee');
-
+const managers  = (users && users.length > 0 ? users : MOCK_USERS).filter((u) => u.role === 'manager');
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -110,8 +110,8 @@ const employees = (users && users.length > 0 ? users : MOCK_USERS).filter((u) =>
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={task ? 'Edit Task' : 'Create New Task'} size="lg">
-      <div className="px-6 py-5 sm:px-8 sm:py-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="px-6 py-5 sm:px-1 sm:py-1">
+        <form onSubmit={handleSubmit} className="space-y-2">
           <Input
             label="Title *"
             placeholder="What needs to be done?"
@@ -194,7 +194,12 @@ const employees = (users && users.length > 0 ? users : MOCK_USERS).filter((u) =>
     { value: '', label: 'Unassigned' },
     ...employees.map((u) => ({
       value: u.id,
-      label: u.name,
+      label: `${u.name} (Employee)`,
+    })),
+    
+    ...managers.map((u) => ({
+      value: u.id,
+      label: `${u.name} (Manager)`,
     })),
   ]}
 />

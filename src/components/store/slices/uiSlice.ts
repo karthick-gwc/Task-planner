@@ -6,10 +6,8 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { UIState, Notification } from '../../types';
 import { NotificationService } from '@/services/domoDataService';
 
-const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-
 const initialState: UIState = {
-  theme:         savedTheme ?? 'dark',
+  theme:         'dark',
   sidebarOpen:   true,
   activeModal:   null,
   notifications: [],
@@ -17,9 +15,12 @@ const initialState: UIState = {
 
 // ─── Helper: sync dark class on <html> ────────────────────────────────────────
 function applyTheme(theme: 'light' | 'dark') {
-  document.documentElement.classList.toggle('dark', theme === 'dark');
-  localStorage.setItem('theme', theme);
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }
 }
+
+applyTheme(initialState.theme);
 
 // ─── Async thunks ─────────────────────────────────────────────────────────────
 

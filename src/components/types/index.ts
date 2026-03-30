@@ -8,9 +8,9 @@ export interface User {
   email: string;
   role: UserRole;
   avatar?: string;
-  manager_id?: string; // ID of the assigned manager
-  assigned_by?: string; // ID of who assigned the manager
-  assigned_at?: string; // When the manager was assigned
+  manager_id?: string; 
+  assigned_by?: string; 
+  assigned_at?: string; 
   createdAt: string;
 }
 
@@ -107,14 +107,14 @@ export interface TaskFilters {
   assignee?: string;
 }
 
-// ─── Kanban ───────────────────────────────────────────────────────────────────
+// // ─── Kanban ───────────────────────────────────────────────────────────────────
 
-export interface KanbanColumn {
-  id: TaskStatus;
-  title: string;
-  color: string;
-  tasks: Task[];
-}
+// export interface KanbanColumn {
+//   id: TaskStatus;
+//   title: string;
+//   color: string;
+//   tasks: Task[];
+// }
 
 // ─── Analytics ────────────────────────────────────────────────────────────────
 
@@ -135,8 +135,8 @@ export interface AnalyticsData {
 
 export interface Notification {
   id: string;
-  userId?: string;   // owner — used to ensure only the right user sees it
-  taskId?: string;   // linked task (optional)
+  userId?: string;   
+  taskId?: string;  
   title: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';

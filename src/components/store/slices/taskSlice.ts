@@ -124,13 +124,8 @@
 
 
 /**
- * taskSlice.ts  (Domo-connected version)
- * ─────────────────────────────────────────────────────────────────────────────
- * Replaces all mock timeouts with real TaskService calls.
- * The slice shape, action names, and selectors are unchanged so no other
- * file needs to be updated.
- * ─────────────────────────────────────────────────────────────────────────────
- */
+ * taskSlice.ts 
+*/
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import type { Task, TaskState, CreateTaskDto, TaskFilters } from '../../types';
@@ -153,7 +148,7 @@ const initialState: TaskState = {
 
 // ─── Async thunks ─────────────────────────────────────────────────────────────
 
-/** Load all tasks from Domo AppDB (tasks collection) */
+/** Load all tasks from Domo AppDB  */
 export const fetchTasks = createAsyncThunk(
   'tasks/fetchAll',
   async (_, { rejectWithValue }) => {
@@ -309,10 +304,7 @@ const taskSlice = createSlice({
     selectTask(state, action: PayloadAction<Task | null>) {
       state.selectedTask = action.payload;
     },
-    /**
-     * Optimistic local move — immediately reflects in UI while
-     * moveTaskRemote runs in the background.
-     */
+   
     moveTask(
       state,
       action: PayloadAction<{ taskId: string; newStatus: Task['status'] }>

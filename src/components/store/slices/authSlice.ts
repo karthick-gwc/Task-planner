@@ -1,51 +1,25 @@
 /**
- * authSlice.ts  (Domo collections version)
- * ─────────────────────────────────────────────────────────────────────────────
  * - registerUser: saves user data to users_meta Domo collection
  * - loginUser: validates email+password against users_meta collection
- * ─────────────────────────────────────────────────────────────────────────────
  */
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { AuthState, LoginCredentials, RegisterCredentials, User } from '../../types';
 import { UserMetaService } from '@/services/domoDataService';
 
-// Synchronously hydrate user from localStorage so the first render
-// already has user/role — prevents flash of wrong route or missing role.
-function loadUserSync(): User | null {
-  try {
-    const raw = localStorage.getItem('user');
-    return raw ? (JSON.parse(raw) as User) : null;
-  } catch {
-    return null;
-  }
-}
-
-const _storedUser = loadUserSync();
-
 const initialState: AuthState = {
-  user:            _storedUser,
+  user:            null,
   users:           [],
-  token:           localStorage.getItem('token'),
-  isAuthenticated: !!localStorage.getItem('token') && _storedUser !== null,
+  token:           null,
+  isAuthenticated: false,
   isLoading:       false,
   error:           null,
 };
 
-// ─── Thunks ───────────────────────────────────────────────────────────────────
-
-/**
- * loginUser
- * Validates email + password against the users_meta Domo collection.
- * Password is stored as a hashed field (password_hash) on the document.
- * For simplicity we store a bcrypt-style hash; here we do a plain comparison
- * since Domo runs client-side. Replace with a proper hash check if needed.
- */
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
-      // Query users_meta for matching email
       const allUsers = await UserMetaService.getAll();
       const match = allUsers.find((u) => u.email === credentials.email);
 
@@ -53,8 +27,6 @@ export const loginUser = createAsyncThunk(
         return rejectWithValue('No account found with that email.');
       }
 
-      // Validate password — UserMetaService stores password_hash in the raw doc.
-      // We call the raw query to check it without exposing it in the typed User model.
       const isValid = await UserMetaService.validatePassword(
         credentials.email,
         credentials.password
@@ -64,27 +36,20 @@ export const loginUser = createAsyncThunk(
         return rejectWithValue('Incorrect password.');
       }
 
-      const token = `domo-session-${match.id}-${Date.now()}`;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(match));
-
-      return { user: match, token };
+      return {
+        user: match,
+        token: `domo-session-${match.id}-${Date.now()}`,
+      };
     } catch (err: any) {
       return rejectWithValue(err?.message ?? 'Login failed');
     }
   }
 );
 
-/**
- * registerUser
- * Saves a new user into the users_meta Domo collection.
- * Checks for duplicate email first.
- */
 export const registerUser = createAsyncThunk(
   'auth/register',
   async (data: RegisterCredentials, { rejectWithValue }) => {
     try {
-      // Check for existing account
       const existing = await UserMetaService.getByEmail(data.email);
       if (existing) {
         return rejectWithValue('An account with this email already exists.');
@@ -99,26 +64,17 @@ export const registerUser = createAsyncThunk(
         createdAt: new Date().toISOString(),
       };
 
-      // Persist to Domo users_meta collection (with password)
       await UserMetaService.create(newUser, data.password);
 
-      const token = `domo-session-${newUser.id}-${Date.now()}`;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(newUser));
-
-      return { user: newUser, token };
+      return {
+        user: newUser,
+        token: `domo-session-${newUser.id}-${Date.now()}`,
+      };
     } catch (err: any) {
       return rejectWithValue(err?.message ?? 'Registration failed');
     }
   }
 );
-
-/** Re-hydrate from localStorage on hard refresh */
-export const loadUserFromStorage = createAsyncThunk('auth/loadUser', async () => {
-  const raw = localStorage.getItem('user');
-  if (!raw) throw new Error('No user in storage');
-  return JSON.parse(raw) as User;
-});
 
 export const fetchAllUsers = createAsyncThunk(
   'auth/fetchAllUsers',
@@ -133,10 +89,16 @@ export const fetchAllUsers = createAsyncThunk(
 
 export const assignManager = createAsyncThunk(
   'auth/assignManager',
-  async (data: { employee_id: string; manager_id: string; assigned_by: string }, { rejectWithValue }) => {
+  async (
+    data: { employee_id: string; manager_id: string; assigned_by: string },
+    { rejectWithValue }
+  ) => {
     try {
-      // Update the user in the users_meta collection
-      const updatedUser = await UserMetaService.updateManager(data.employee_id, data.manager_id, data.assigned_by);
+      const updatedUser = await UserMetaService.updateManager(
+        data.employee_id,
+        data.manager_id,
+        data.assigned_by
+      );
 
       return {
         employee_id: data.employee_id,
@@ -150,8 +112,6 @@ export const assignManager = createAsyncThunk(
   }
 );
 
-// ─── Slice ────────────────────────────────────────────────────────────────────
-
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -160,8 +120,6 @@ const authSlice = createSlice({
       state.user            = null;
       state.token           = null;
       state.isAuthenticated = false;
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
     },
     clearError(state) {
       state.error = null;
@@ -169,48 +127,47 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loginUser.pending,   (s) => { s.isLoading = true;  s.error = null; })
+      .addCase(loginUser.pending,   (s) => { s.isLoading = true; s.error = null; })
       .addCase(loginUser.fulfilled, (s, a) => {
-        s.isLoading = false; s.user = a.payload.user;
-        s.token = a.payload.token; s.isAuthenticated = true;
+        s.isLoading = false;
+        s.user = a.payload.user;
+        s.token = a.payload.token;
+        s.isAuthenticated = true;
       })
       .addCase(loginUser.rejected, (s, a) => {
-        s.isLoading = false; s.error = a.payload as string;
+        s.isLoading = false;
+        s.error = a.payload as string;
       });
 
     builder
-      .addCase(registerUser.pending,   (s) => { s.isLoading = true;  s.error = null; })
+      .addCase(registerUser.pending,   (s) => { s.isLoading = true; s.error = null; })
       .addCase(registerUser.fulfilled, (s, a) => {
-        s.isLoading = false; s.user = a.payload.user;
-        s.token = a.payload.token; s.isAuthenticated = true;
+        s.isLoading = false;
+        s.user = a.payload.user;
+        s.token = a.payload.token;
+        s.isAuthenticated = true;
       })
       .addCase(registerUser.rejected, (s, a) => {
-        s.isLoading = false; s.error = a.payload as string;
-      });
-
-    builder
-      .addCase(loadUserFromStorage.fulfilled, (s, a) => {
-        s.user = a.payload; s.isAuthenticated = true;
-      })
-      .addCase(loadUserFromStorage.rejected, (s) => {
-        s.isAuthenticated = false;
+        s.isLoading = false;
+        s.error = a.payload as string;
       });
 
     builder
       .addCase(fetchAllUsers.pending, (s) => { s.isLoading = true; s.error = null; })
       .addCase(fetchAllUsers.fulfilled, (s, a) => {
-        s.isLoading = false; s.users = a.payload;
+        s.isLoading = false;
+        s.users = a.payload;
       })
       .addCase(fetchAllUsers.rejected, (s, a) => {
-        s.isLoading = false; s.error = a.payload as string;
+        s.isLoading = false;
+        s.error = a.payload as string;
       });
 
     builder
       .addCase(assignManager.pending, (s) => { s.isLoading = true; s.error = null; })
       .addCase(assignManager.fulfilled, (s, a) => {
         s.isLoading = false;
-        // Update the user in the users array
-        const index = s.users.findIndex(u => u.id === a.payload.employee_id);
+        const index = s.users.findIndex((u) => u.id === a.payload.employee_id);
         if (index !== -1) {
           s.users[index] = {
             ...s.users[index],
@@ -221,7 +178,8 @@ const authSlice = createSlice({
         }
       })
       .addCase(assignManager.rejected, (s, a) => {
-        s.isLoading = false; s.error = a.payload as string;
+        s.isLoading = false;
+        s.error = a.payload as string;
       });
   },
 });

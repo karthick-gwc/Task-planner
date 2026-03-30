@@ -17,7 +17,7 @@ export function TasksPage() {
   const dispatch = useAppDispatch();
   const { filteredTasks, isLoading } = useAppSelector((s) => s.tasks);
   const { user } = useAppSelector((s) => s.auth);
-
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   useEffect(() => {
     if (user?.role === 'employee') dispatch(fetchMyTasks(user.id));
     else dispatch(fetchTasks());

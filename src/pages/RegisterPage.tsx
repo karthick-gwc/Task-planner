@@ -22,7 +22,7 @@ export function RegisterPage() {
   const [showPass, setShowPass] = useState(false);
   const [errors,   setErrors]   = useState<Record<string, string>>({});
 
-  useEffect(() => { if (isAuthenticated) navigate('/dashboard'); }, [isAuthenticated, navigate]);
+  // useEffect(() => { if (isAuthenticated) navigate('/dashboard'); }, [isAuthenticated, navigate]);
   useEffect(() => {
     if (error) { toast.error(error); dispatch(clearError()); }
   }, [error, dispatch]);

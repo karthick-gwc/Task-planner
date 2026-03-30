@@ -2,9 +2,6 @@
  * TaskComments.tsx
  * ─────────────────────────────────────────────────────────────────────────────
  * Displays and manages comments for a single task.
- * Calls CommentService directly (not via Redux — comments are task-scoped
- * and don't need global state).
- *
  * Usage:
  *   <TaskComments taskId={task.id} />
  * ─────────────────────────────────────────────────────────────────────────────

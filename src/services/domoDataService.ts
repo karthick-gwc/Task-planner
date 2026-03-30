@@ -1,9 +1,5 @@
-/**
- * domoDataService.ts
- * Type-safe wrapper around DomoApi for every collection used in this project:
- *   • tasks  •  users_meta  •  notifications  •  comments
+/*Type-safe wrapper around DomoApi for every collection used in this project:  • tasks  •  users_meta  •  notifications  •  comments
  */
-
 import DomoApi from '../API/domoAPI';
 import type { Task, User, Notification } from '../components/types';
 
@@ -38,8 +34,7 @@ function num(v: unknown, fallback = 0): number {
   return typeof v === 'number' ? v : fallback;
 }
 
-/** Simple hash: just a base64 encode as a lightweight deterministic transform.
- *  In production replace with a real bcrypt/argon2 hash done server-side. */
+
 function simpleHash(password: string): string {
   return btoa(password + '_tf_salt_2026');
 }
@@ -84,7 +79,7 @@ function mapDocToUser(doc: any): User {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 function mapDocToNotification(doc: any): Notification {
   const c = doc?.content ?? {};
   return {
@@ -153,7 +148,7 @@ function notificationToRaw(
 export const TaskService = {
   async getAll(): Promise<Task[]> {
     const docs = await DomoApi.ListDocuments(COLLECTIONS.TASKS);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     return Array.isArray(docs) ? (docs as any[]).map(mapDocToTask) : [];
   },
 
@@ -167,7 +162,6 @@ export const TaskService = {
       COLLECTIONS.TASKS,
       { 'content.status': { $eq: status } }
     );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return Array.isArray(docs) ? (docs as any[]).map(mapDocToTask) : [];
   },
 
@@ -176,7 +170,6 @@ export const TaskService = {
       COLLECTIONS.TASKS,
       { 'content.assigned_to': { $eq: userId } }
     );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return Array.isArray(docs) ? (docs as any[]).map(mapDocToTask) : [];
   },
 
@@ -185,8 +178,7 @@ export const TaskService = {
       COLLECTIONS.TASKS,
       { 'content.created_by': { $eq: userId } }
     );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return Array.isArray(docs) ? (docs as any[]).map(mapDocToTask) : [];
+   return Array.isArray(docs) ? (docs as any[]).map(mapDocToTask) : [];
   },
 
   async create(task: Omit<Task, 'id'>): Promise<Task> {
@@ -232,7 +224,6 @@ export const TaskService = {
 export const UserMetaService = {
   async getAll(): Promise<User[]> {
     const docs = await DomoApi.ListDocuments(COLLECTIONS.USERS_META);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return Array.isArray(docs) ? (docs as any[]).map(mapDocToUser) : [];
   },
 
@@ -266,7 +257,7 @@ export const UserMetaService = {
       { 'content.email': { $eq: email } }
     );
     if (!Array.isArray(docs) || docs.length === 0) return false;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
     const storedHash = str((docs as any[])[0]?.content?.password_hash);
     return storedHash === simpleHash(password);
   },
@@ -326,7 +317,7 @@ export const UserMetaService = {
   },
 
   /**
-   * Update manager assignment for a user
+    Update manager assignment for a user
    */
   async updateManager(employeeId: string, managerId: string, assignedBy: string): Promise<User> {
     const docs = await DomoApi.QueryDocument(
@@ -400,7 +391,7 @@ export const NotificationService = {
 
   async markRead(id: string): Promise<void> {
     const doc = await DomoApi.GetDocument(COLLECTIONS.NOTIFICATIONS, id);
-    const c = doc?.content ?? {};
+    const c = (doc as any)?.content ?? {};
     await DomoApi.UpdateDocument(COLLECTIONS.NOTIFICATIONS, id, { ...c, read: 1 });
   },
 

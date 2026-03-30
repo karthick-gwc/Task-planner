@@ -9,6 +9,7 @@ import { CalendarPage } from './pages/CalendarPage';
 import { AnalyticsPage } from './pages/AnalysticsPage';
 import { TeamPage } from './pages/TeamPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { KanbanPage } from './pages/KanbanPage';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="tasks" element={<TasksPage />} />
+        <Route path="kanban" element={<KanbanPage />} />
         <Route path="calendar" element={<CalendarPage />} />
 
         {/* Analytics: admin only */}

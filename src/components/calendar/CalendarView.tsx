@@ -7,18 +7,22 @@ import {
 } from 'date-fns';
 import { useAppSelector } from '../../hooks/useAppRedux';
 import { Task } from '../types';
+import { cn } from '../utils';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-const PRIORITY_CHIP: Record<string, { bg: string; color: string }> = {
-  urgent: { bg: 'rgba(239,68,68,0.15)',   color: '#f87171' },
-  high:   { bg: 'rgba(249,115,22,0.15)',  color: '#fb923c' },
-  medium: { bg: 'rgba(99,112,245,0.15)',  color: '#8196fa' },
-  low:    { bg: 'rgba(16,185,129,0.15)',  color: '#34d399' },
+const PRIORITY_CHIP: Record<string, { bg: string; text: string }> = {
+  urgent: { bg: 'bg-red-500/15',    text: 'text-red-400'    },
+  high:   { bg: 'bg-orange-500/15', text: 'text-orange-400' },
+  medium: { bg: 'bg-brand-500/15',  text: 'text-brand-400'  },
+  low:    { bg: 'bg-emerald-500/15',text: 'text-emerald-400' },
 };
 
 const PRIORITY_BAR: Record<string, string> = {
-  urgent: '#ef4444', high: '#f97316', medium: '#6370f5', low: '#10b981',
+  urgent: 'bg-red-500',
+  high:   'bg-orange-500',
+  medium: 'bg-brand-500',
+  low:    'bg-emerald-500',
 };
 
 interface CalendarViewProps {
@@ -26,122 +30,133 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ onTaskClick }: CalendarViewProps) {
-  const { tasks }       = useAppSelector((s) => s.tasks);
-  const [curr, setCurr] = useState(new Date());
+  const { tasks }           = useAppSelector((s) => s.tasks);
+  const [curr, setCurr]     = useState(new Date());
   const [selDay, setSelDay] = useState<Date | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   const monthStart = startOfMonth(curr);
   const monthEnd   = endOfMonth(curr);
   const days       = eachDayOfInterval({ start: startOfWeek(monthStart), end: endOfWeek(monthEnd) });
 
-  const getTasksForDay = (day: Date) => tasks.filter((t) => isSameDay(parseISO(t.due_date), day));
-  const selDayTasks    = selDay ? getTasksForDay(selDay) : [];
+  const getTasksForDay = (day: Date) =>
+    tasks.filter((t) => t.due_date && isSameDay(parseISO(t.due_date), day));
+
+  const selDayTasks = selDay ? getTasksForDay(selDay) : [];
 
   const prev    = () => setCurr((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
   const next    = () => setCurr((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
   const goToday = () => { setCurr(new Date()); setSelDay(new Date()); };
 
+  const handleDayClick = (day: Date) => {
+    setSelDay(day);
+    setPanelOpen(true);
+  };
+
   return (
-    <div style={{ display: 'flex', gap: 20, height: '100%', minHeight: 0 }}>
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-5 h-full min-h-0">
 
       {/* ── Calendar grid ── */}
-      <div style={{
-        flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0,
-        background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 18, overflow: 'hidden',
-      }}>
+      <div className="flex-1 flex flex-col min-w-0 bg-[var(--surface-2)] border border-[var(--border)] rounded-2xl overflow-hidden">
+
         {/* Navigation bar */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '14px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-[var(--border)] shrink-0">
+          <div className="flex items-center gap-1.5">
+            {/* Prev */}
             <button
               onClick={prev}
-              style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', transition: 'background 0.15s' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--border)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
+              className="w-8 h-8 rounded-xl border border-[var(--border)] bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-muted)] cursor-pointer hover:bg-[var(--border)] transition-colors"
             >
-              <ChevronLeft style={{ width: 14, height: 14 }} />
+              <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', fontFamily: 'Sora,sans-serif', minWidth: 160, textAlign: 'center', margin: 0 }}>
+
+            <h2 className="text-[var(--text)] font-bold text-sm sm:text-base font-display min-w-[130px] sm:min-w-[160px] text-center m-0">
               {format(curr, 'MMMM yyyy')}
             </h2>
+
+            {/* Next */}
             <button
               onClick={next}
-              style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', transition: 'background 0.15s' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--border)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
+              className="w-8 h-8 rounded-xl border border-[var(--border)] bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-muted)] cursor-pointer hover:bg-[var(--border)] transition-colors"
             >
-              <ChevronRight style={{ width: 14, height: 14 }} />
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
+
           <button
             onClick={goToday}
-            style={{ padding: '6px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-3)', color: 'var(--text)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s' }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#6370f5')}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+            className="px-3 sm:px-3.5 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface-3)] text-[var(--text)] text-xs sm:text-[0.8rem] font-semibold cursor-pointer hover:border-brand-500 transition-colors"
           >
             Today
           </button>
         </div>
 
         {/* Weekday labels */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        <div className="grid grid-cols-7 border-b border-[var(--border)] shrink-0">
           {WEEKDAYS.map((d) => (
-            <div key={d} style={{ padding: '8px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {d}
+            <div
+              key={d}
+              className="py-2 text-center text-[var(--text-muted)] text-[0.6rem] sm:text-[0.7rem] font-semibold uppercase tracking-[0.05em]"
+            >
+              {/* Show short label on smallest screens */}
+              <span className="sm:hidden">{d[0]}</span>
+              <span className="hidden sm:inline">{d}</span>
             </div>
           ))}
         </div>
 
         {/* Day cells */}
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gridAutoRows: '1fr', overflow: 'auto' }}>
+        <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-auto">
           {days.map((day, i) => {
-            const dayTasks  = getTasksForDay(day);
-            const isSel     = selDay && isSameDay(day, selDay);
-            const isCurrMo  = isSameMonth(day, curr);
-            const today     = isToday(day);
+            const dayTasks = getTasksForDay(day);
+            const isSel    = selDay && isSameDay(day, selDay);
+            const isCurrMo = isSameMonth(day, curr);
+            const today    = isToday(day);
 
             return (
               <button
                 key={i}
-                onClick={() => setSelDay(day)}
-                style={{
-                  padding: '6px 6px 4px', textAlign: 'left', minHeight: 72,
-                  border: 'none', borderRight: '1px solid var(--border)', borderBottom: '1px solid var(--border)',
-                  background: isSel ? 'rgba(99,112,245,0.08)' : 'transparent',
-                  opacity: isCurrMo ? 1 : 0.3,
-                  cursor: 'pointer', transition: 'background 0.15s',
-                }}
-                onMouseEnter={(e) => { if (!isSel) e.currentTarget.style.background = 'var(--surface-3)'; }}
-                onMouseLeave={(e) => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}
+                onClick={() => handleDayClick(day)}
+                className={cn(
+                  'p-1 sm:p-1.5 text-left min-h-[52px] sm:min-h-[72px] border-none border-r border-b border-[var(--border)] cursor-pointer transition-colors',
+                  isSel
+                    ? 'bg-brand-500/8'
+                    : 'bg-transparent hover:bg-[var(--surface-3)]',
+                  !isCurrMo && 'opacity-30'
+                )}
               >
-                <span style={{
-                  display: 'inline-flex', width: 24, height: 24, borderRadius: '50%',
-                  alignItems: 'center', justifyContent: 'center',
-                  fontSize: '0.78rem', fontWeight: today ? 700 : 400,
-                  background: today ? '#5655ea' : 'transparent',
-                  color: today ? '#fff' : 'var(--text)',
-                  marginBottom: 3,
-                }}>
+                {/* Day number */}
+                <span
+                  className={cn(
+                    'inline-flex w-5 h-5 sm:w-6 sm:h-6 rounded-full items-center justify-center text-[0.65rem] sm:text-[0.78rem] mb-0.5',
+                    today
+                      ? 'bg-brand-600 text-white font-bold'
+                      : 'bg-transparent text-[var(--text)] font-normal'
+                  )}
+                >
                   {format(day, 'd')}
                 </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+
+                {/* Task chips */}
+                <div className="flex flex-col gap-0.5">
                   {dayTasks.slice(0, 2).map((task) => {
                     const chip = PRIORITY_CHIP[task.priority] ?? PRIORITY_CHIP.medium;
                     return (
-                      <div key={task.id} style={{
-                        fontSize: '0.65rem', padding: '1px 5px', borderRadius: 5,
-                        background: chip.bg, color: chip.color,
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        fontWeight: 500,
-                      }}>
+                      <div
+                        key={task.id}
+                        className={cn(
+                          'text-[0.55rem] sm:text-[0.65rem] px-1 sm:px-1.5 py-px rounded-[4px] overflow-hidden text-ellipsis whitespace-nowrap font-medium',
+                          chip.bg, chip.text
+                        )}
+                      >
                         {task.title}
                       </div>
                     );
                   })}
                   {dayTasks.length > 2 && (
-                    <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', paddingLeft: 2 }}>+{dayTasks.length - 2} more</span>
+                    <span className="text-[0.55rem] sm:text-[0.62rem] text-[var(--text-muted)] pl-0.5">
+                      +{dayTasks.length - 2} more
+                    </span>
                   )}
                 </div>
               </button>
@@ -150,72 +165,113 @@ export function CalendarView({ onTaskClick }: CalendarViewProps) {
         </div>
       </div>
 
-      {/* ── Day panel ── */}
-      <div style={{ width: 260, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 18, overflow: 'hidden', flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-            <h3 style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.9rem', margin: 0 }}>
+      {/* ── Mobile: Day panel as bottom drawer overlay ── */}
+      {panelOpen && selDay && (
+        <div className="lg:hidden fixed inset-0 z-40 flex items-end" onClick={() => setPanelOpen(false)}>
+          <div
+            className="w-full bg-[var(--surface-2)] border-t border-[var(--border)] rounded-t-2xl overflow-hidden max-h-[60vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Panel header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] shrink-0">
+              <div>
+                <h3 className="text-[var(--text)] font-semibold text-sm m-0">
+                  {format(selDay, 'EEEE, MMM d')}
+                </h3>
+                <p className="text-[var(--text-muted)] text-xs mt-0.5">
+                  {selDayTasks.length} task{selDayTasks.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <button
+                onClick={() => setPanelOpen(false)}
+                className="text-[var(--text-muted)] text-xs px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-3)] hover:text-[var(--text)] transition-colors"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Task list */}
+            <DayTaskList tasks={selDayTasks} selDay={selDay} onTaskClick={onTaskClick} />
+          </div>
+        </div>
+      )}
+
+      {/* ── Desktop: Day panel sidebar ── */}
+      <div className="hidden lg:flex w-[260px] shrink-0 flex-col">
+        <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-2xl overflow-hidden flex-1 flex flex-col">
+          {/* Panel header */}
+          <div className="px-4 py-3.5 border-b border-[var(--border)] shrink-0">
+            <h3 className="text-[var(--text)] font-semibold text-[0.9rem] m-0">
               {selDay ? format(selDay, 'EEEE, MMM d') : 'Select a day'}
             </h3>
             {selDay && (
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 4 }}>
+              <p className="text-[var(--text-muted)] text-xs mt-1">
                 {selDayTasks.length} task{selDayTasks.length !== 1 ? 's' : ''}
               </p>
             )}
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {selDayTasks.length === 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 10, padding: '32px 0' }}>
-                <CalendarDays style={{ width: 32, height: 32, color: 'var(--text-muted)', opacity: 0.25 }} />
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', textAlign: 'center' }}>
-                  {selDay ? 'No tasks this day' : 'Click a day to see tasks'}
-                </p>
-              </div>
-            ) : (
-              selDayTasks.map((task) => (
-                <motion.div
-                  key={task.id}
-                  initial={{ opacity: 0, x: 8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  onClick={() => onTaskClick?.(task)}
-                  style={{
-                    padding: '10px 12px 10px 16px', borderRadius: 12, cursor: 'pointer',
-                    background: 'var(--surface-3)', border: '1px solid var(--border)',
-                    position: 'relative', overflow: 'hidden', transition: 'border-color 0.15s',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#6370f5')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
-                >
-                  {/* Priority bar */}
-                  <div style={{
-                    position: 'absolute', left: 0, top: 0, bottom: 0, width: 4,
-                    background: PRIORITY_BAR[task.priority] ?? '#6370f5',
-                  }} />
-                  <p style={{ color: 'var(--text)', fontWeight: 500, fontSize: '0.82rem', margin: '0 0 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {task.title}
-                  </p>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <span style={{
-                      fontSize: '0.67rem', padding: '2px 7px', borderRadius: 99, fontWeight: 600,
-                      background: PRIORITY_CHIP[task.priority]?.bg ?? 'var(--surface-3)',
-                      color: PRIORITY_CHIP[task.priority]?.color ?? 'var(--text-muted)',
-                    }}>
-                      {task.priority}
-                    </span>
-                    <span style={{
-                      fontSize: '0.67rem', padding: '2px 7px', borderRadius: 99, fontWeight: 600,
-                      background: 'var(--surface-2)', color: 'var(--text-muted)',
-                    }}>
-                      {task.status.replace('_', ' ')}
-                    </span>
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
+          {/* Task list */}
+          <DayTaskList tasks={selDayTasks} selDay={selDay} onTaskClick={onTaskClick} />
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Shared day task list ── */
+function DayTaskList({
+  tasks,
+  selDay,
+  onTaskClick,
+}: {
+  tasks: Task[];
+  selDay: Date | null;
+  onTaskClick?: (task: Task) => void;
+}) {
+  return (
+    <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
+      {tasks.length === 0 ? (
+        <div className="flex flex-col items-center justify-center flex-1 gap-2.5 py-8">
+          <CalendarDays className="w-8 h-8 text-[var(--text-muted)] opacity-25" />
+          <p className="text-[var(--text-muted)] text-[0.82rem] text-center">
+            {selDay ? 'No tasks this day' : 'Click a day to see tasks'}
+          </p>
+        </div>
+      ) : (
+        tasks.map((task) => {
+          const chip = PRIORITY_CHIP[task.priority] ?? PRIORITY_CHIP.medium;
+          const bar  = PRIORITY_BAR[task.priority]  ?? 'bg-brand-500';
+          return (
+            <motion.div
+              key={task.id}
+              initial={{ opacity: 0, x: 8 }}
+              animate={{ opacity: 1, x: 0 }}
+              onClick={() => onTaskClick?.(task)}
+              className="relative pl-4 pr-3 py-2.5 rounded-xl cursor-pointer bg-[var(--surface-3)] border border-[var(--border)] overflow-hidden hover:border-brand-500 transition-colors"
+            >
+              {/* Priority left bar */}
+              <div className={cn('absolute left-0 top-0 bottom-0 w-1', bar)} />
+
+              <p className="text-[var(--text)] font-medium text-[0.82rem] m-0 mb-1.5 truncate">
+                {task.title}
+              </p>
+
+              <div className="flex gap-1.5 flex-wrap">
+                <span className={cn(
+                  'text-[0.67rem] px-1.5 py-0.5 rounded-full font-semibold capitalize',
+                  chip.bg, chip.text
+                )}>
+                  {task.priority}
+                </span>
+                <span className="text-[0.67rem] px-1.5 py-0.5 rounded-full font-semibold bg-[var(--surface-2)] text-[var(--text-muted)] capitalize">
+                  {task.status.replace('_', ' ')}
+                </span>
+              </div>
+            </motion.div>
+          );
+        })
+      )}
     </div>
   );
 }

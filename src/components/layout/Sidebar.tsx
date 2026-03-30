@@ -22,6 +22,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard',  to: '/dashboard' },
   { icon: CheckSquare,     label: 'My Tasks',   to: '/tasks' },
+  { icon: Zap,             label: 'Kanban',     to: '/kanban' },
   { icon: Calendar,        label: 'Calendar',   to: '/calendar' },
   { icon: BarChart3,       label: 'Analytics',  to: '/analytics', role: ['admin'] },
   { icon: Users,           label: 'Team',       to: '/team',      role: ['admin', 'manager'] },
@@ -205,6 +206,6 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
           )}
         </div>
       </div>
-    </motion.aside>
+    </motion.aside>   
   );
 }

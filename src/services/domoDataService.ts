@@ -1,189 +1,245 @@
-/*Type-safe wrapper around DomoApi for every collection used in this project:  • tasks  •  users_meta  •  notifications  •  comments
- */
-import DomoApi from '../API/domoAPI';
-import type { Task, User, Notification } from '../components/types';
+import DomoApi from '@/API/domoAPI';
+import type {
+  Notification,
+  Subtask,
+  Task,
+  TaskHistoryEvent,
+  TimeEntry,
+  User,
+} from '@/components/types';
 
 const COLLECTIONS = {
-  TASKS:         'tasks',
-  USERS_META:    'users_meta',
+  TASKS: 'tasks',
+  USERS_META: 'users_meta',
   NOTIFICATIONS: 'notifications',
-  COMMENTS:      'comments',
+  COMMENTS: 'comments',
 } as const;
 
+type DomoDocument = {
+  id?: string;
+  content?: Record<string, unknown>;
+};
+
+type QueryOptions = {
+  limit?: number;
+  offset?: number;
+  orderby?: string;
+};
+
 export interface Comment {
-  id:        string;
-  taskId:    string;
-  userId:    string;
-  text:      string;
+  id: string;
+  taskId: string;
+  userId: string;
+  text: string;
   createdAt: string;
 }
 
-// ─── Utility helpers ──────────────────────────────────────────────────────────
+function str(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function num(value: unknown, fallback = 0): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
 
 function safeJsonParse<T>(value: unknown, fallback: T): T {
-  if (!value || typeof value !== 'string') return fallback;
-  try   { return JSON.parse(value) as T; }
-  catch { return fallback; }
+  if (typeof value !== 'string' || !value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
 }
 
-function str(v: unknown, fallback = ''): string {
-  return typeof v === 'string' ? v : fallback;
+function maybeArray<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (typeof value === 'string') return safeJsonParse<T[]>(value, []);
+  return [];
 }
-
-function num(v: unknown, fallback = 0): number {
-  return typeof v === 'number' ? v : fallback;
-}
-
 
 function simpleHash(password: string): string {
-  return btoa(password + '_tf_salt_2026');
+  return btoa(`${password}_tf_salt_2026`);
 }
 
-// ─── Mappers ──────────────────────────────────────────────────────────────────
+function mapDocToTask(doc: DomoDocument): Task {
+  const content = doc.content ?? {};
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapDocToTask(doc: any): Task {
-  const c = doc?.content ?? {};
   return {
-    id:           str(doc?.id),
-    title:        str(c.title),
-    description:  str(c.description),
-    priority:     str(c.priority,   'medium') as Task['priority'],
-    status:       str(c.status,     'pending') as Task['status'],
-    category:     str(c.category,   'work')   as Task['category'],
-    due_date:     str(c.due_date,   new Date().toISOString()),
-    assigned_to:  str(c.assigned_to),
-    created_by:   str(c.created_by),
-    recurrence:   str(c.recurrence, 'none')   as Task['recurrence'],
-    tags:         safeJsonParse<string[]>(c.tags,         []),
-    dependencies: safeJsonParse<string[]>(c.dependencies, []),
-    progress:     num(c.progress),
-    createdAt:    str(c.createdAt,  new Date().toISOString()),
-    updatedAt:    str(c.updatedAt,  new Date().toISOString()),
+    id: str(doc.id),
+    title: str(content.title),
+    description: str(content.description),
+    priority: str(content.priority, 'medium') as Task['priority'],
+    status: str(content.status, 'pending') as Task['status'],
+    category: str(content.category, 'work') as Task['category'],
+    due_date: str(content.due_date, new Date().toISOString()),
+    assigned_to: str(content.assigned_to),
+    created_by: str(content.created_by),
+    recurrence: str(content.recurrence, 'none') as Task['recurrence'],
+    dependencies: maybeArray<string>(content.dependencies),
+    tags: maybeArray<string>(content.tags),
+    progress: num(content.progress),
+    productivity_score: num(content.productivity_score, 0) || undefined,
+    storyPoints: num(content.storyPoints, 0) || undefined,
+    sprintId: str(content.sprintId) || undefined,
+    subtasks: maybeArray<Subtask>(content.subtasks),
+    history: maybeArray<TaskHistoryEvent>(content.history),
+    timeEntries: maybeArray<TimeEntry>(content.timeEntries),
+    watchers: maybeArray<string>(content.watchers),
+    attachments: num(content.attachments, 0) || undefined,
+    estimatedHours: num(content.estimatedHours, 0) || undefined,
+    loggedHours: num(content.loggedHours, 0) || undefined,
+    completedAt: str(content.completedAt) || undefined,
+    createdAt: str(content.createdAt, new Date().toISOString()),
+    updatedAt: str(content.updatedAt, new Date().toISOString()),
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapDocToUser(doc: any): User {
-  const c = doc?.content ?? {};
+function mapDocToUser(doc: DomoDocument): User {
+  const content = doc.content ?? {};
+
   return {
-    id:          str(c.userId,  str(doc?.id)),
-    name:        str(c.displayName),
-    email:       str(c.email),
-    role:        str(c.role, 'employee') as User['role'],
-    avatar:      str(c.avatarKey),
-    manager_id:  str(c.manager_id),
-    assigned_by: str(c.assigned_by),
-    assigned_at: str(c.assigned_at),
-    createdAt:   str(c.createdAt, new Date().toISOString()),
+    id: str(content.userId, str(doc.id)),
+    name: str(content.displayName),
+    email: str(content.email),
+    role: str(content.role, 'employee') as User['role'],
+    avatar: str(content.avatarKey),
+    manager_id: str(content.manager_id),
+    assigned_by: str(content.assigned_by),
+    assigned_at: str(content.assigned_at),
+    department: str(content.department) || undefined,
+    jobTitle: str(content.jobTitle) || undefined,
+    phone: str(content.phone) || undefined,
+    location: str(content.location) || undefined,
+    bio: str(content.bio) || undefined,
+    joinedAt: str(content.joinedAt) || undefined,
+    createdAt: str(content.createdAt, new Date().toISOString()),
   };
 }
 
+function mapDocToNotification(doc: DomoDocument): Notification {
+  const content = doc.content ?? {};
 
-function mapDocToNotification(doc: any): Notification {
-  const c = doc?.content ?? {};
   return {
-    id:        str(doc?.id),
-    userId:    str(c.userId),
-    taskId:    str(c.taskId),
-    title:     str(c.title),
-    message:   str(c.message),
-    type:      str(c.type, 'info') as Notification['type'],
-    read:      c.read === 1,
-    createdAt: str(c.createdAt, new Date().toISOString()),
+    id: str(doc.id),
+    userId: str(content.userId) || undefined,
+    taskId: str(content.taskId) || undefined,
+    title: str(content.title),
+    message: str(content.message),
+    type: str(content.type, 'info') as Notification['type'],
+    read: content.read === 1 || content.read === true,
+    createdAt: str(content.createdAt, new Date().toISOString()),
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapDocToComment(doc: any): Comment {
-  const c = doc?.content ?? {};
+function mapDocToComment(doc: DomoDocument): Comment {
+  const content = doc.content ?? {};
+
   return {
-    id:        str(doc?.id),
-    taskId:    str(c.taskId),
-    userId:    str(c.userId),
-    text:      str(c.text),
-    createdAt: str(c.createdAt, new Date().toISOString()),
+    id: str(doc.id),
+    taskId: str(content.taskId),
+    userId: str(content.userId),
+    text: str(content.text),
+    createdAt: str(content.createdAt, new Date().toISOString()),
   };
 }
 
 function taskToRaw(task: Omit<Task, 'id'>): Record<string, unknown> {
   return {
-    title:        task.title,
-    description:  task.description  ?? '',
-    priority:     task.priority,
-    status:       task.status,
-    category:     task.category,
-    due_date:     task.due_date,
-    assigned_to:  task.assigned_to  ?? '',
-    created_by:   task.created_by,
-    recurrence:   task.recurrence,
-    tags:         JSON.stringify(task.tags         ?? []),
+    title: task.title,
+    description: task.description ?? '',
+    priority: task.priority,
+    status: task.status,
+    category: task.category,
+    due_date: task.due_date,
+    assigned_to: task.assigned_to ?? '',
+    created_by: task.created_by,
+    recurrence: task.recurrence,
     dependencies: JSON.stringify(task.dependencies ?? []),
-    progress:     task.progress     ?? 0,
-    createdAt:    task.createdAt,
-    updatedAt:    task.updatedAt,
+    tags: JSON.stringify(task.tags ?? []),
+    progress: task.progress ?? 0,
+    productivity_score: task.productivity_score ?? 0,
+    storyPoints: task.storyPoints ?? 0,
+    sprintId: task.sprintId ?? '',
+    subtasks: JSON.stringify(task.subtasks ?? []),
+    history: JSON.stringify(task.history ?? []),
+    timeEntries: JSON.stringify(task.timeEntries ?? []),
+    watchers: JSON.stringify(task.watchers ?? []),
+    attachments: task.attachments ?? 0,
+    estimatedHours: task.estimatedHours ?? 0,
+    loggedHours: task.loggedHours ?? 0,
+    completedAt: task.completedAt ?? '',
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt,
   };
 }
 
 function notificationToRaw(
-  n: Omit<Notification, 'id'>,
+  notification: Omit<Notification, 'id'>,
   userId: string,
   taskId: string
 ): Record<string, unknown> {
   return {
-    title:     n.title,
-    message:   n.message,
-    type:      n.type,
-    read:      n.read ? 1 : 0,
     userId,
     taskId,
-    createdAt: n.createdAt ?? new Date().toISOString(),
+    title: notification.title,
+    message: notification.message,
+    type: notification.type,
+    read: notification.read ? 1 : 0,
+    createdAt: notification.createdAt ?? new Date().toISOString(),
   };
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-//  TASKS
-// ═════════════════════════════════════════════════════════════════════════════
+async function queryDocuments(
+  collection: string,
+  query: Record<string, unknown>,
+  options?: QueryOptions
+): Promise<DomoDocument[]> {
+  const docs = await DomoApi.QueryDocument(collection, query, options ?? {});
+  return Array.isArray(docs) ? (docs as DomoDocument[]) : [];
+}
 
 export const TaskService = {
   async getAll(): Promise<Task[]> {
     const docs = await DomoApi.ListDocuments(COLLECTIONS.TASKS);
-
-    return Array.isArray(docs) ? (docs as any[]).map(mapDocToTask) : [];
+    return Array.isArray(docs) ? (docs as DomoDocument[]).map(mapDocToTask) : [];
   },
 
   async getById(id: string): Promise<Task> {
-    const doc = await DomoApi.GetDocument(COLLECTIONS.TASKS, id);
+    const doc = (await DomoApi.GetDocument(COLLECTIONS.TASKS, id)) as DomoDocument;
     return mapDocToTask(doc);
   },
 
   async getByStatus(status: Task['status']): Promise<Task[]> {
-    const docs = await DomoApi.QueryDocument(
-      COLLECTIONS.TASKS,
-      { 'content.status': { $eq: status } }
-    );
-    return Array.isArray(docs) ? (docs as any[]).map(mapDocToTask) : [];
+    const docs = await queryDocuments(COLLECTIONS.TASKS, {
+      'content.status': { $eq: status },
+    });
+    return docs.map(mapDocToTask);
   },
 
   async getByAssignee(userId: string): Promise<Task[]> {
-    const docs = await DomoApi.QueryDocument(
-      COLLECTIONS.TASKS,
-      { 'content.assigned_to': { $eq: userId } }
-    );
-    return Array.isArray(docs) ? (docs as any[]).map(mapDocToTask) : [];
+    const docs = await queryDocuments(COLLECTIONS.TASKS, {
+      'content.assigned_to': { $eq: userId },
+    });
+    return docs.map(mapDocToTask);
   },
 
   async getByCreator(userId: string): Promise<Task[]> {
-    const docs = await DomoApi.QueryDocument(
-      COLLECTIONS.TASKS,
-      { 'content.created_by': { $eq: userId } }
-    );
-   return Array.isArray(docs) ? (docs as any[]).map(mapDocToTask) : [];
+    const docs = await queryDocuments(COLLECTIONS.TASKS, {
+      'content.created_by': { $eq: userId },
+    });
+    return docs.map(mapDocToTask);
   },
 
   async create(task: Omit<Task, 'id'>): Promise<Task> {
-    const raw = taskToRaw(task);
-    const doc = await DomoApi.CreateDocument(COLLECTIONS.TASKS, raw);
+    const doc = (await DomoApi.CreateDocument(
+      COLLECTIONS.TASKS,
+      taskToRaw(task)
+    )) as DomoDocument;
     return mapDocToTask(doc);
   },
 
@@ -194,8 +250,13 @@ export const TaskService = {
       ...updates,
       updatedAt: new Date().toISOString(),
     };
-    const raw = taskToRaw(merged);
-    const doc = await DomoApi.UpdateDocument(COLLECTIONS.TASKS, id, raw);
+
+    const doc = (await DomoApi.UpdateDocument(
+      COLLECTIONS.TASKS,
+      id,
+      taskToRaw(merged)
+    )) as DomoDocument;
+
     return mapDocToTask(doc);
   },
 
@@ -209,6 +270,7 @@ export const TaskService = {
 
   async delete(id: string): Promise<void> {
     await DomoApi.DeleteDocument(COLLECTIONS.TASKS, id);
+    await CommentService.deleteAllForTask(id);
   },
 
   async deleteMany(ids: string[]): Promise<void> {
@@ -217,131 +279,110 @@ export const TaskService = {
   },
 };
 
-// ═════════════════════════════════════════════════════════════════════════════
-//  USERS META  — now includes password support for login/register
-// ═════════════════════════════════════════════════════════════════════════════
-
 export const UserMetaService = {
   async getAll(): Promise<User[]> {
     const docs = await DomoApi.ListDocuments(COLLECTIONS.USERS_META);
-    return Array.isArray(docs) ? (docs as any[]).map(mapDocToUser) : [];
+    return Array.isArray(docs) ? (docs as DomoDocument[]).map(mapDocToUser) : [];
   },
 
   async getByUserId(userId: string): Promise<User | null> {
-    const docs = await DomoApi.QueryDocument(
-      COLLECTIONS.USERS_META,
-      { 'content.userId': { $eq: userId } }
-    );
-    if (!Array.isArray(docs) || docs.length === 0) return null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return mapDocToUser((docs as any[])[0]);
+    const docs = await queryDocuments(COLLECTIONS.USERS_META, {
+      'content.userId': { $eq: userId },
+    });
+    return docs[0] ? mapDocToUser(docs[0]) : null;
   },
 
-  /** Find a user by email address */
   async getByEmail(email: string): Promise<User | null> {
-    const docs = await DomoApi.QueryDocument(
-      COLLECTIONS.USERS_META,
-      { 'content.email': { $eq: email } }
-    );
-    if (!Array.isArray(docs) || docs.length === 0) return null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return mapDocToUser((docs as any[])[0]);
+    const docs = await queryDocuments(COLLECTIONS.USERS_META, {
+      'content.email': { $eq: email },
+    });
+    return docs[0] ? mapDocToUser(docs[0]) : null;
   },
 
-  /**
-   * Validate login: checks email + password_hash match in users_meta.
-   */
   async validatePassword(email: string, password: string): Promise<boolean> {
-    const docs = await DomoApi.QueryDocument(
-      COLLECTIONS.USERS_META,
-      { 'content.email': { $eq: email } }
-    );
-    if (!Array.isArray(docs) || docs.length === 0) return false;
-   
-    const storedHash = str((docs as any[])[0]?.content?.password_hash);
-    return storedHash === simpleHash(password);
+    const docs = await queryDocuments(COLLECTIONS.USERS_META, {
+      'content.email': { $eq: email },
+    });
+    if (!docs[0]) return false;
+    return str(docs[0].content?.password_hash) === simpleHash(password);
   },
 
-  /**
-   * Create a new user in users_meta with a hashed password.
-   * Called during registration.
-   */
   async create(user: User, password: string): Promise<User> {
-    const raw: Record<string, unknown> = {
-      userId:        user.id,
-      displayName:   user.name,
-      email:         user.email,
-      role:          user.role,
-      avatarKey:     user.avatar ?? '',
-      createdAt:     user.createdAt,
+    const doc = (await DomoApi.CreateDocument(COLLECTIONS.USERS_META, {
+      userId: user.id,
+      displayName: user.name,
+      email: user.email,
+      role: user.role,
+      avatarKey: user.avatar ?? '',
+      manager_id: user.manager_id ?? '',
+      assigned_by: user.assigned_by ?? '',
+      assigned_at: user.assigned_at ?? '',
+      department: user.department ?? '',
+      jobTitle: user.jobTitle ?? '',
+      phone: user.phone ?? '',
+      location: user.location ?? '',
+      bio: user.bio ?? '',
+      joinedAt: user.joinedAt ?? '',
+      createdAt: user.createdAt,
       password_hash: simpleHash(password),
-    };
-    const doc = await DomoApi.CreateDocument(COLLECTIONS.USERS_META, raw);
+    })) as DomoDocument;
+
     return mapDocToUser(doc);
   },
 
-  /**
-   * Upsert: update the record if one exists for this userId,
-   * otherwise create a new document (without overwriting password).
-   */
   async upsert(user: User): Promise<User> {
-    const docs = await DomoApi.QueryDocument(
-      COLLECTIONS.USERS_META,
-      { 'content.userId': { $eq: user.id } }
-    );
+    const docs = await queryDocuments(COLLECTIONS.USERS_META, {
+      'content.userId': { $eq: user.id },
+    });
 
     const raw: Record<string, unknown> = {
-      userId:      user.id,
+      userId: user.id,
       displayName: user.name,
-      email:       user.email,
-      role:        user.role,
-      avatarKey:   user.avatar ?? '',
-      createdAt:   user.createdAt,
+      email: user.email,
+      role: user.role,
+      avatarKey: user.avatar ?? '',
+      manager_id: user.manager_id ?? '',
+      assigned_by: user.assigned_by ?? '',
+      assigned_at: user.assigned_at ?? '',
+      department: user.department ?? '',
+      jobTitle: user.jobTitle ?? '',
+      phone: user.phone ?? '',
+      location: user.location ?? '',
+      bio: user.bio ?? '',
+      joinedAt: user.joinedAt ?? '',
+      createdAt: user.createdAt,
     };
 
-    if (Array.isArray(docs) && docs.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const existingDoc  = (docs as any[])[0];
-      const existingId   = str(existingDoc?.id);
-      // Preserve password_hash on update
-      const existingHash = str(existingDoc?.content?.password_hash);
-      const doc = await DomoApi.UpdateDocument(
-        COLLECTIONS.USERS_META, existingId,
-        { ...raw, password_hash: existingHash }
-      );
+    if (docs[0]?.id) {
+      const doc = (await DomoApi.UpdateDocument(COLLECTIONS.USERS_META, docs[0].id, {
+        ...raw,
+        password_hash: str(docs[0].content?.password_hash),
+      })) as DomoDocument;
+
       return mapDocToUser(doc);
     }
 
-    const doc = await DomoApi.CreateDocument(COLLECTIONS.USERS_META, raw);
+    const doc = (await DomoApi.CreateDocument(COLLECTIONS.USERS_META, raw)) as DomoDocument;
     return mapDocToUser(doc);
   },
 
-  /**
-    Update manager assignment for a user
-   */
   async updateManager(employeeId: string, managerId: string, assignedBy: string): Promise<User> {
-    const docs = await DomoApi.QueryDocument(
-      COLLECTIONS.USERS_META,
-      { 'content.userId': { $eq: employeeId } }
-    );
+    const docs = await queryDocuments(COLLECTIONS.USERS_META, {
+      'content.userId': { $eq: employeeId },
+    });
 
-    if (!Array.isArray(docs) || docs.length === 0) {
+    if (!docs[0]?.id) {
       throw new Error('User not found');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const existingDoc = (docs as any[])[0];
-    const existingId = str(existingDoc?.id);
-    const c = existingDoc?.content ?? {};
-
-    const updatedContent = {
-      ...c,
+    const current = docs[0].content ?? {};
+    const doc = (await DomoApi.UpdateDocument(COLLECTIONS.USERS_META, docs[0].id, {
+      ...current,
       manager_id: managerId,
       assigned_by: assignedBy,
       assigned_at: new Date().toISOString(),
-    };
+    })) as DomoDocument;
 
-    const doc = await DomoApi.UpdateDocument(COLLECTIONS.USERS_META, existingId, updatedContent);
     return mapDocToUser(doc);
   },
 
@@ -350,33 +391,24 @@ export const UserMetaService = {
   },
 };
 
-// ═════════════════════════════════════════════════════════════════════════════
-//  NOTIFICATIONS
-// ═════════════════════════════════════════════════════════════════════════════
-
 export const NotificationService = {
   async getByUser(userId: string): Promise<Notification[]> {
-    const docs = await DomoApi.QueryDocument(
+    const docs = await queryDocuments(
       COLLECTIONS.NOTIFICATIONS,
       { 'content.userId': { $eq: userId } },
       { orderby: 'content.createdAt desc', limit: 50 }
     );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return Array.isArray(docs) ? (docs as any[]).map(mapDocToNotification) : [];
+    return docs.map(mapDocToNotification);
   },
 
   async getUnreadByUser(userId: string): Promise<Notification[]> {
-    const docs = await DomoApi.QueryDocument(
-      COLLECTIONS.NOTIFICATIONS,
-      {
-        $and: [
-          { 'content.userId': { $eq: userId } },
-          { 'content.read':   { $eq: 0 } },
-        ],
-      }
-    );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return Array.isArray(docs) ? (docs as any[]).map(mapDocToNotification) : [];
+    const docs = await queryDocuments(COLLECTIONS.NOTIFICATIONS, {
+      $and: [
+        { 'content.userId': { $eq: userId } },
+        { 'content.read': { $eq: 0 } },
+      ],
+    });
+    return docs.map(mapDocToNotification);
   },
 
   async create(
@@ -384,37 +416,38 @@ export const NotificationService = {
     userId: string,
     taskId = ''
   ): Promise<Notification> {
-    const raw = notificationToRaw(notification, userId, taskId);
-    const doc = await DomoApi.CreateDocument(COLLECTIONS.NOTIFICATIONS, raw);
+    const doc = (await DomoApi.CreateDocument(
+      COLLECTIONS.NOTIFICATIONS,
+      notificationToRaw(notification, userId, taskId)
+    )) as DomoDocument;
     return mapDocToNotification(doc);
   },
 
   async markRead(id: string): Promise<void> {
-    const doc = await DomoApi.GetDocument(COLLECTIONS.NOTIFICATIONS, id);
-    const c = (doc as any)?.content ?? {};
-    await DomoApi.UpdateDocument(COLLECTIONS.NOTIFICATIONS, id, { ...c, read: 1 });
+    const doc = (await DomoApi.GetDocument(COLLECTIONS.NOTIFICATIONS, id)) as DomoDocument;
+    await DomoApi.UpdateDocument(COLLECTIONS.NOTIFICATIONS, id, {
+      ...(doc.content ?? {}),
+      read: 1,
+    });
   },
 
   async markAllRead(userId: string): Promise<void> {
-    const docs = await DomoApi.QueryDocument(
-      COLLECTIONS.NOTIFICATIONS,
-      {
-        $and: [
-          { 'content.userId': { $eq: userId } },
-          { 'content.read':   { $eq: 0 } },
-        ],
-      }
-    );
-    if (!Array.isArray(docs) || docs.length === 0) return;
+    const docs = await queryDocuments(COLLECTIONS.NOTIFICATIONS, {
+      $and: [
+        { 'content.userId': { $eq: userId } },
+        { 'content.read': { $eq: 0 } },
+      ],
+    });
+
     await Promise.all(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (docs as any[]).map((doc: any) =>
-        DomoApi.UpdateDocument(
-          COLLECTIONS.NOTIFICATIONS,
-          str(doc?.id),
-          { ...(doc?.content ?? {}), read: 1 }
+      docs
+        .filter((doc) => !!doc.id)
+        .map((doc) =>
+          DomoApi.UpdateDocument(COLLECTIONS.NOTIFICATIONS, doc.id as string, {
+            ...(doc.content ?? {}),
+            read: 1,
+          })
         )
-      )
     );
   },
 
@@ -423,43 +456,35 @@ export const NotificationService = {
   },
 
   async deleteAllForUser(userId: string): Promise<void> {
-    const docs = await DomoApi.QueryDocument(
-      COLLECTIONS.NOTIFICATIONS,
-      { 'content.userId': { $eq: userId } }
-    );
-    if (!Array.isArray(docs) || docs.length === 0) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ids = (docs as any[])
-      .map((d: any) => str(d?.id))
-      .filter(Boolean)
-      .join(',');
-    if (ids) await DomoApi.BulkDeleteDocuments(COLLECTIONS.NOTIFICATIONS, ids);
+    const docs = await queryDocuments(COLLECTIONS.NOTIFICATIONS, {
+      'content.userId': { $eq: userId },
+    });
+
+    const ids = docs.map((doc) => str(doc.id)).filter(Boolean);
+    if (ids.length > 0) {
+      await DomoApi.BulkDeleteDocuments(COLLECTIONS.NOTIFICATIONS, ids.join(','));
+    }
   },
 };
 
-// ═════════════════════════════════════════════════════════════════════════════
-//  COMMENTS
-// ═════════════════════════════════════════════════════════════════════════════
-
 export const CommentService = {
   async getByTask(taskId: string): Promise<Comment[]> {
-    const docs = await DomoApi.QueryDocument(
+    const docs = await queryDocuments(
       COLLECTIONS.COMMENTS,
       { 'content.taskId': { $eq: taskId } },
       { orderby: 'content.createdAt asc' }
     );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return Array.isArray(docs) ? (docs as any[]).map(mapDocToComment) : [];
+    return docs.map(mapDocToComment);
   },
 
   async create(taskId: string, userId: string, text: string): Promise<Comment> {
-    const raw: Record<string, unknown> = {
+    const doc = (await DomoApi.CreateDocument(COLLECTIONS.COMMENTS, {
       taskId,
       userId,
       text,
       createdAt: new Date().toISOString(),
-    };
-    const doc = await DomoApi.CreateDocument(COLLECTIONS.COMMENTS, raw);
+    })) as DomoDocument;
+
     return mapDocToComment(doc);
   },
 
@@ -468,16 +493,20 @@ export const CommentService = {
   },
 
   async deleteAllForTask(taskId: string): Promise<void> {
-    const docs = await DomoApi.QueryDocument(
-      COLLECTIONS.COMMENTS,
-      { 'content.taskId': { $eq: taskId } }
-    );
-    if (!Array.isArray(docs) || docs.length === 0) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ids = (docs as any[])
-      .map((d: any) => str(d?.id))
-      .filter(Boolean)
-      .join(',');
-    if (ids) await DomoApi.BulkDeleteDocuments(COLLECTIONS.COMMENTS, ids);
+    const docs = await queryDocuments(COLLECTIONS.COMMENTS, {
+      'content.taskId': { $eq: taskId },
+    });
+
+    const ids = docs.map((doc) => str(doc.id)).filter(Boolean);
+    if (ids.length > 0) {
+      await DomoApi.BulkDeleteDocuments(COLLECTIONS.COMMENTS, ids.join(','));
+    }
   },
+};
+
+export default {
+  TaskService,
+  UserMetaService,
+  NotificationService,
+  CommentService,
 };

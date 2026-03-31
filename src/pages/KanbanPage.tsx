@@ -1,21 +1,25 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { useAppDispatch } from '../hooks/useAppRedux';
-import { deleteTask, updateTask } from '../components/store/slices/taskSlice';
+import { useAppDispatch, useAppSelector } from '../hooks/useAppRedux';
+import { fetchMyTasks, fetchTasks } from '../components/store/slices/taskSlice';
 import { KanbanBoard } from '../components/kanban/KanbanBoard';
 import { TaskForm } from '../components/tasks/TaskForm';
 import { Button } from '../components/ui';
 import { Task, TaskStatus } from '../components/types';
-import toast from 'react-hot-toast';
 
 export function KanbanPage() {
   const dispatch = useAppDispatch();
+  const { filteredTasks } = useAppSelector((s) => s.tasks);
+  const { user } = useAppSelector((s) => s.auth);
   const [formOpen, setFormOpen] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>('pending');
 
-  const handleEdit = (task: Task) => { setEditTask(task); setFormOpen(true); };
-  const handleDelete = (id: string) => { dispatch(deleteTask(id)); toast.success('Task deleted'); };
+  useEffect(() => {
+    if (user?.role === 'employee') dispatch(fetchMyTasks(user.id));
+    else dispatch(fetchTasks());
+  }, [dispatch, user?.id, user?.role]);
+
   const handleAddTask = (status: TaskStatus) => {
     setDefaultStatus(status);
     setEditTask(null);
@@ -23,7 +27,7 @@ export function KanbanPage() {
   };
 
   return (
-    <div className="flex flex-col h-full gap-4 animate-fade-in">
+    <div className="mx-auto flex h-full w-full max-w-[1600px] flex-col gap-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
@@ -37,10 +41,15 @@ export function KanbanPage() {
 
       {/* Board */}
       <div className="flex-1 overflow-hidden">
-        <KanbanBoard onEdit={handleEdit} onDelete={handleDelete} onAddTask={handleAddTask} />
+        <KanbanBoard tasks={filteredTasks} onNewTask={handleAddTask} />
       </div>
 
-      <TaskForm isOpen={formOpen} onClose={() => { setFormOpen(false); setEditTask(null); }} task={editTask} />
+      <TaskForm
+        isOpen={formOpen}
+        onClose={() => { setFormOpen(false); setEditTask(null); }}
+        task={editTask}
+        defaultStatus={defaultStatus}
+      />
     </div>
   );
 }

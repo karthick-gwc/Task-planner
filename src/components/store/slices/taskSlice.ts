@@ -131,6 +131,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import type { Task, TaskState, CreateTaskDto, TaskFilters } from '../../types';
 import { generateId } from '../../utils';
 import { TaskService } from '@/services/domoDataService';
+import type { RootState } from '..';
 
 const initialState: TaskState = {
   tasks:         [],
@@ -144,6 +145,9 @@ const initialState: TaskState = {
     category: 'all',
     search:   '',
   },
+  viewMode: 'grid',
+  activeSprint: null,
+  sprints: [],
 };
 
 // ─── Async thunks ─────────────────────────────────────────────────────────────
@@ -201,10 +205,89 @@ export const updateTask = createAsyncThunk(
   'tasks/update',
   async (
     { id, updates }: { id: string; updates: Partial<Task> },
-    { rejectWithValue }
+    { rejectWithValue, getState }
   ) => {
     try {
-      const updatedTask = await TaskService.update(id, updates);
+      const state = getState() as RootState;
+      const currentTask = state.tasks.tasks.find((task) => task.id === id);
+      const actor = state.auth.user;
+      const nextHistory = [...(currentTask?.history ?? [])];
+
+      if (currentTask && actor) {
+        const timestamp = new Date().toISOString();
+        const pushEvent = (
+          type:
+            | 'title_changed'
+            | 'description_changed'
+            | 'status_changed'
+            | 'priority_changed'
+            | 'assigned'
+            | 'due_date_changed'
+            | 'progress_updated'
+            | 'tag_added'
+            | 'tag_removed'
+            | 'subtask_completed',
+          from?: string,
+          to?: string,
+          meta?: string
+        ) => {
+          nextHistory.push({
+            id: generateId(),
+            type,
+            userId: actor.id,
+            userName: actor.name,
+            timestamp,
+            from,
+            to,
+            meta,
+          });
+        };
+
+        if (updates.title && updates.title !== currentTask.title) {
+          pushEvent('title_changed', currentTask.title, updates.title);
+        }
+        if (updates.description !== undefined && updates.description !== currentTask.description) {
+          pushEvent('description_changed', currentTask.description ?? '', updates.description ?? '');
+        }
+        if (updates.status && updates.status !== currentTask.status) {
+          pushEvent('status_changed', currentTask.status, updates.status);
+        }
+        if (updates.priority && updates.priority !== currentTask.priority) {
+          pushEvent('priority_changed', currentTask.priority, updates.priority);
+        }
+        if (updates.assigned_to !== undefined && updates.assigned_to !== currentTask.assigned_to) {
+          pushEvent('assigned', currentTask.assigned_to ?? 'Unassigned', updates.assigned_to ?? 'Unassigned');
+        }
+        if (updates.due_date && updates.due_date !== currentTask.due_date) {
+          pushEvent('due_date_changed', currentTask.due_date, updates.due_date);
+        }
+        if (typeof updates.progress === 'number' && updates.progress !== currentTask.progress) {
+          pushEvent('progress_updated', String(currentTask.progress ?? 0), String(updates.progress));
+        }
+        if (updates.tags) {
+          const currentTags = new Set(currentTask.tags ?? []);
+          const nextTags = new Set(updates.tags);
+          updates.tags.forEach((tag) => {
+            if (!currentTags.has(tag)) pushEvent('tag_added', undefined, undefined, tag);
+          });
+          (currentTask.tags ?? []).forEach((tag) => {
+            if (!nextTags.has(tag)) pushEvent('tag_removed', undefined, undefined, tag);
+          });
+        }
+        if (updates.subtasks && currentTask.subtasks) {
+          updates.subtasks.forEach((subtask) => {
+            const previous = currentTask.subtasks?.find((item) => item.id === subtask.id);
+            if (previous && !previous.completed && subtask.completed) {
+              pushEvent('subtask_completed', undefined, undefined, subtask.title);
+            }
+          });
+        }
+      }
+
+      const updatedTask = await TaskService.update(id, {
+        ...updates,
+        history: nextHistory,
+      });
       return updatedTask;
     } catch (err: any) {
       return rejectWithValue(err?.message ?? 'Failed to update task');
@@ -276,6 +359,11 @@ function applyFilters(tasks: Task[], filters: TaskFilters): Task[] {
     if (filters.priority && filters.priority !== 'all' && t.priority !== filters.priority) return false;
     if (filters.category && filters.category !== 'all' && t.category !== filters.category) return false;
     if (filters.assignee && t.assigned_to !== filters.assignee) return false;
+    if (filters.sprintId && t.sprintId !== filters.sprintId) return false;
+    if (filters.tags && filters.tags.length > 0) {
+      const taskTags = t.tags ?? [];
+      if (!filters.tags.every((tag) => taskTags.includes(tag))) return false;
+    }
     if (filters.search) {
       const q = filters.search.toLowerCase();
       if (
@@ -298,7 +386,13 @@ const taskSlice = createSlice({
       state.filteredTasks = applyFilters(state.tasks, state.filters);
     },
     clearFilters(state) {
-      state.filters = { status: 'all', priority: 'all', category: 'all', search: '' };
+      state.filters = {
+        status: 'all',
+        priority: 'all',
+        category: 'all',
+        search: '',
+        assignee: '',
+      };
       state.filteredTasks = state.tasks;
     },
     selectTask(state, action: PayloadAction<Task | null>) {

@@ -5,12 +5,14 @@ import { Header } from './Header';
 import { useAppSelector } from '../../hooks/useAppRedux';
 
 export function AppLayout() {
-  const { theme } = useAppSelector((s) => s.ui);
+  const { theme, density, surfaceStyle } = useAppSelector((s) => s.ui);
 
   // Keep <html> dark class in sync with Redux theme at all times
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
-  }, [theme]);
+    document.documentElement.setAttribute('data-density', density);
+    document.documentElement.setAttribute('data-surface-style', surfaceStyle);
+  }, [theme, density, surfaceStyle]);
 
   return (
     <div
@@ -23,8 +25,11 @@ export function AppLayout() {
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header />
         <main
-          className="flex-1 overflow-y-auto"
-          style={{ background: 'var(--surface)', padding: '24px' }}
+          className="flex-1 overflow-y-auto transition-[padding,background] duration-200"
+          style={{
+            background: 'var(--app-canvas)',
+            padding: density === 'compact' ? '18px' : '24px',
+          }}
         >
           <Outlet />
         </main>

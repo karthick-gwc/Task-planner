@@ -12,14 +12,6 @@ import { cn } from '../utils';
 
 const COLORS = ['#6370f5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
-const cardVariants = {
-  hidden:  { opacity: 0, y: 16 },
-  visible: (i: number) => ({
-    opacity: 1, y: 0,
-    transition: { delay: i * 0.07, duration: 0.35, ease: [0.16, 1, 0.3, 1] },
-  }),
-};
-
 interface StatCardProps {
   label:     string;
   value:     number | string;
@@ -32,7 +24,11 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon: Icon, iconColor, iconBg, trend, index = 0 }: StatCardProps) {
   return (
-    <motion.div custom={index} initial="hidden" animate="visible" variants={cardVariants}>
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.07, duration: 0.35 }}
+    >
       <div className="relative min-h-28 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">

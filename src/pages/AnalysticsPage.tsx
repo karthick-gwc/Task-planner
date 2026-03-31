@@ -1,24 +1,45 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { WeeklyChart, CategoryPieChart, PriorityBarChart } from '../components/dashboard/Charts';
 import { ProductivityScore } from '../components/dashboard/ProductivityScore';
 import { DashboardStats } from '../components/dashboard/Charts';
 import { useAppSelector } from '../hooks/useAppRedux';
-import { Card, Badge, Avatar } from '../components/ui';
+import { Card, Badge, Avatar, Pagination } from '../components/ui';
 import { formatDate, statusLabel, priorityLabel } from '../components/utils';
 import { MOCK_USERS } from '../components/utils';
+
+const TEAM_PAGE_SIZE = 6;
 
 export function AnalyticsPage() {
   const { tasks } = useAppSelector((s) => s.tasks);
   const { users } = useAppSelector((s) => s.auth);
   const teamMembers = users && users.length > 0 ? users : MOCK_USERS;
+  const [teamPage, setTeamPage] = useState(1);
 
-  const teamStats = teamMembers.map((user) => {
-    const userTasks = tasks.filter((t) => t.assigned_to === user.id);
-    const completed = userTasks.filter((t) => t.status === 'completed').length;
-    const rate = userTasks.length > 0 ? Math.round((completed / userTasks.length) * 100) : 0;
-    return { ...user, total: userTasks.length, completed, rate };
-  });
+  const teamStats = useMemo(
+    () =>
+      teamMembers
+        .map((user) => {
+          const userTasks = tasks.filter((t) => t.assigned_to === user.id);
+          const completed = userTasks.filter((t) => t.status === 'completed').length;
+          const rate = userTasks.length > 0 ? Math.round((completed / userTasks.length) * 100) : 0;
+          return { ...user, total: userTasks.length, completed, rate };
+        })
+        .sort((a, b) => b.rate - a.rate),
+    [teamMembers, tasks]
+  );
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(teamStats.length / TEAM_PAGE_SIZE));
+    if (teamPage > maxPage) {
+      setTeamPage(maxPage);
+    }
+  }, [teamPage, teamStats.length]);
+
+  const paginatedTeamStats = useMemo(() => {
+    const startIndex = (teamPage - 1) * TEAM_PAGE_SIZE;
+    return teamStats.slice(startIndex, startIndex + TEAM_PAGE_SIZE);
+  }, [teamPage, teamStats]);
 
   const recentCompleted = tasks
     .filter((t) => t.status === 'completed')
@@ -54,11 +75,11 @@ export function AnalyticsPage() {
         <Card>
           <h3 className="font-semibold text-[var(--text)] mb-4">Team Performance</h3>
           <div className="flex flex-col gap-4">
-            {teamStats
-              .sort((a, b) => b.rate - a.rate)
-              .map((member, i) => (
+            {paginatedTeamStats.map((member, i) => (
                 <div key={member.id} className="flex items-center gap-3 sm:gap-4">
-                  <span className="text-sm font-bold text-[var(--text-muted)] w-5 text-center shrink-0">{i + 1}</span>
+                  <span className="text-sm font-bold text-[var(--text-muted)] w-5 text-center shrink-0">
+                    {(teamPage - 1) * TEAM_PAGE_SIZE + i + 1}
+                  </span>
                   <Avatar name={member.name} size="sm" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
@@ -69,7 +90,7 @@ export function AnalyticsPage() {
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${member.rate}%` }}
-                        transition={{ duration: 0.7, delay: 0.2 + i * 0.1 }}
+                        transition={{ duration: 0.7, delay: 0.2 + i * 0.08 }}
                         className="h-full rounded-full bg-brand-500"
                       />
                     </div>
@@ -78,6 +99,14 @@ export function AnalyticsPage() {
                 </div>
               ))}
           </div>
+          <Pagination
+            currentPage={teamPage}
+            totalItems={teamStats.length}
+            pageSize={TEAM_PAGE_SIZE}
+            onPageChange={setTeamPage}
+            itemLabel="team members"
+            className="mt-5"
+          />
         </Card>
       </motion.div>
 
@@ -103,6 +132,7 @@ export function AnalyticsPage() {
                     <Badge variant={task.category} className="capitalize hidden sm:flex">{task.category}</Badge>
                   </div>
                 </div>
+                
               ))}
             </div>
           )}

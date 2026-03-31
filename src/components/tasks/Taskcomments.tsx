@@ -11,8 +11,16 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Loader2, Trash2, MessageSquare, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppSelector } from '../../hooks/useAppRedux';
-import { CommentService, type Comment } from '../../services/domoDataService';
+import { CommentService } from '../../services/domoDataService';
 import { formatRelative, cn } from '../utils';
+
+interface Comment {
+  id: string;
+  taskId: string;
+  userId: string;
+  text: string;
+  createdAt: string;
+}
 
 // ─── Helper: get initials from a name ────────────────────────────────────────
 function initials(name: string): string {

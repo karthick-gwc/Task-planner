@@ -7,10 +7,12 @@ import { UIState, Notification } from '../../types';
 import { NotificationService } from '@/services/domoDataService';
 
 const initialState: UIState = {
-  theme:         'dark',
+  theme:         'light',
   sidebarOpen:   true,
   activeModal:   null,
   notifications: [],
+  density:       'comfortable',
+  surfaceStyle:  'tint',
 };
 
 // ─── Helper: sync dark class on <html> ────────────────────────────────────────
@@ -103,6 +105,12 @@ const uiSlice = createSlice({
       state.theme = action.payload;
       applyTheme(state.theme);
     },
+    setDensity(state, action: PayloadAction<'comfortable' | 'compact'>) {
+      state.density = action.payload;
+    },
+    setSurfaceStyle(state, action: PayloadAction<'flat' | 'tint'>) {
+      state.surfaceStyle = action.payload;
+    },
     toggleSidebar(state) {
       state.sidebarOpen = !state.sidebarOpen;
     },
@@ -154,7 +162,7 @@ const uiSlice = createSlice({
 });
 
 export const {
-  toggleTheme, setTheme, toggleSidebar, openModal, closeModal,
+  toggleTheme, setTheme, setDensity, setSurfaceStyle, toggleSidebar, openModal, closeModal,
   addNotificationLocal, markNotificationRead, markAllRead, clearNotifications,
 } = uiSlice.actions;
 export default uiSlice.reducer;

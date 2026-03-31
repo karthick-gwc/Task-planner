@@ -1,18 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { Modal, Button } from '../ui';
 import { Input, Select, Textarea } from '../ui/Input';
-import type { Task, CreateTaskDto, TaskPriority, TaskStatus, TaskCategory, RecurrenceType } from '../types';
+import type {
+  CreateTaskDto,
+  RecurrenceType,
+  Task,
+  TaskCategory,
+  TaskPriority,
+  TaskStatus,
+} from '../types';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppRedux';
-import toast from 'react-hot-toast';
 import { createTask, updateTask } from '../store/slices/taskSlice';
-import { MOCK_USERS } from '../utils';
-import {fetchAllUsers, assignManager } from '@/components/store/slices/authSlice';  
-
+import { fetchAllUsers } from '@/components/store/slices/authSlice';
 
 interface TaskFormProps {
   isOpen: boolean;
   onClose: () => void;
   task?: Task | null;
+  defaultStatus?: TaskStatus;
 }
 
 const defaultForm: CreateTaskDto = {
@@ -26,12 +32,15 @@ const defaultForm: CreateTaskDto = {
   recurrence: 'none',
   tags: [],
   dependencies: [],
+  storyPoints: 0,
+  estimatedHours: 0,
 };
 
-export function TaskForm({ isOpen, onClose, task }: TaskFormProps) {
+export function TaskForm({ isOpen, onClose, task, defaultStatus = 'pending' }: TaskFormProps) {
   const dispatch = useAppDispatch();
   const { user, users } = useAppSelector((s) => s.auth);
   const { tasks } = useAppSelector((s) => s.tasks);
+
   const [form, setForm] = useState<CreateTaskDto>(defaultForm);
   const [tagInput, setTagInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,41 +59,81 @@ export function TaskForm({ isOpen, onClose, task }: TaskFormProps) {
         recurrence: task.recurrence,
         tags: task.tags || [],
         dependencies: task.dependencies || [],
+        storyPoints: task.storyPoints ?? 0,
+        estimatedHours: task.estimatedHours ?? 0,
+        sprintId: task.sprintId ?? '',
       });
     } else {
-      setForm(defaultForm);
+      setForm({
+        ...defaultForm,
+        status: defaultStatus,
+      });
     }
+
+    setTagInput('');
     setErrors({});
-  }, [task, isOpen]);
+  }, [task, isOpen, defaultStatus]);
+
+  useEffect(() => {
+    if (users.length === 0) {
+      dispatch(fetchAllUsers());
+    }
+  }, [dispatch, users.length]);
+
+  const employees = users.filter((u) => u.role === 'employee');
+  const managers = users.filter((u) => u.role === 'manager');
 
   const validate = () => {
-    const e: Record<string, string> = {};
-    if (!form.title.trim()) e.title = 'Title is required';
-    if (!form.due_date) e.due_date = 'Due date is required';
-    setErrors(e);
-    return Object.keys(e).length === 0;
+    const nextErrors: Record<string, string> = {};
+
+    if (!form.title.trim()) nextErrors.title = 'Title is required';
+    if (!form.due_date) nextErrors.due_date = 'Due date is required';
+    if ((form.storyPoints ?? 0) < 0) nextErrors.storyPoints = 'Story points cannot be negative';
+    if ((form.estimatedHours ?? 0) < 0) nextErrors.estimatedHours = 'Estimate cannot be negative';
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
-  
-useEffect(() => {
-  if (!users || users.length === 0) {
-    dispatch(fetchAllUsers());
-  }
-}, [dispatch, users?.length]);
+  const set = <K extends keyof CreateTaskDto>(key: K, value: CreateTaskDto[K]) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
 
-const employees = (users && users.length > 0 ? users : MOCK_USERS).filter((u) => u.role === 'employee');
-const managers  = (users && users.length > 0 ? users : MOCK_USERS).filter((u) => u.role === 'manager');
+  const addTag = () => {
+    const tag = tagInput.trim().toLowerCase().replace(/\s+/g, '-');
+    if (tag && !form.tags?.includes(tag)) {
+      set('tags', [...(form.tags || []), tag]);
+    }
+    setTagInput('');
+  };
+
+  const removeTag = (tag: string) => {
+    set('tags', (form.tags || []).filter((value) => value !== tag));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+
     setLoading(true);
     try {
+      const normalizedForm = {
+        ...form,
+        storyPoints: Number(form.storyPoints) || 0,
+        estimatedHours: Number(form.estimatedHours) || 0,
+      };
+
       if (task) {
-        await dispatch(updateTask({ id: task.id, updates: form })).unwrap();
-        toast.success('Task updated successfully!');
+        await dispatch(updateTask({ id: task.id, updates: normalizedForm })).unwrap();
+        toast.success('Task updated successfully');
       } else {
-        await dispatch(createTask({ ...form, created_by: user?.id || 'u1' })).unwrap();
-        toast.success('Task created successfully!');
+        await dispatch(
+          createTask({
+            ...normalizedForm,
+            created_by: user?.id || 'system',
+          })
+        ).unwrap();
+        toast.success('Task created successfully');
       }
       onClose();
     } catch {
@@ -94,181 +143,216 @@ const managers  = (users && users.length > 0 ? users : MOCK_USERS).filter((u) =>
     }
   };
 
-  const addTag = () => {
-    const tag = tagInput.trim().toLowerCase();
-    if (tag && !form.tags?.includes(tag)) {
-      setForm((f) => ({ ...f, tags: [...(f.tags || []), tag] }));
-    }
-    setTagInput('');
-  };
-
-  const removeTag = (tag: string) => {
-    setForm((f) => ({ ...f, tags: (f.tags || []).filter((t) => t !== tag) }));
-  };
-
-  const set = (key: keyof CreateTaskDto, val: any) => setForm((f) => ({ ...f, [key]: val }));
-
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={task ? 'Edit Task' : 'Create New Task'} size="lg">
-      <div className="px-6 py-5 sm:px-1 sm:py-1">
-        <form onSubmit={handleSubmit} className="space-y-2">
-          <Input
-            label="Title *"
-            placeholder="What needs to be done?"
-            value={form.title}
-            onChange={(e) => set('title', e.target.value)}
-            error={errors.title}
-          />
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={task ? 'Edit Task' : 'Create New Task'}
+      size="xl"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 xl:grid-cols-[1.7fr_1fr] gap-5">
+          <div className="space-y-4">
+            <Input
+              label="Title *"
+              placeholder="Ship billing export for enterprise customers"
+              value={form.title}
+              onChange={(e) => set('title', e.target.value)}
+              error={errors.title}
+            />
 
-          <Textarea
-            label="Description"
-            placeholder="Add details, context, or notes..."
-            value={form.description}
-            onChange={(e) => set('description', e.target.value)}
-            rows={3}
-          />
+            <Textarea
+              label="Description"
+              placeholder="Capture acceptance criteria, dependencies, and rollout notes..."
+              value={form.description}
+              onChange={(e) => set('description', e.target.value)}
+              rows={6}
+            />
 
-          <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Due Date *"
+                type="date"
+                value={form.due_date}
+                onChange={(e) => set('due_date', e.target.value)}
+                error={errors.due_date}
+              />
+
+              <Select
+                label="Assign To"
+                value={form.assigned_to || ''}
+                onChange={(e) => set('assigned_to', e.target.value)}
+                options={[
+                  { value: '', label: 'Unassigned' },
+                  ...employees.map((member) => ({
+                    value: member.id,
+                    label: `${member.name} (Employee)`,
+                  })),
+                  ...managers.map((member) => ({
+                    value: member.id,
+                    label: `${member.name} (Manager)`,
+                  })),
+                ]}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Story Points"
+                type="number"
+                min={0}
+                value={String(form.storyPoints ?? 0)}
+                onChange={(e) => set('storyPoints', Number(e.target.value))}
+                error={errors.storyPoints}
+              />
+              <Input
+                label="Estimate (hours)"
+                type="number"
+                min={0}
+                step="0.5"
+                value={String(form.estimatedHours ?? 0)}
+                onChange={(e) => set('estimatedHours', Number(e.target.value))}
+                error={errors.estimatedHours}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[var(--text)]">Labels</label>
+              <div className="flex gap-2">
+                <input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addTag();
+                    }
+                  }}
+                  placeholder="frontend, blocker, customer-reported"
+                  className="flex-1 h-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text)] outline-none focus:border-brand-500"
+                />
+                <Button type="button" variant="secondary" size="md" onClick={addTag}>
+                  Add
+                </Button>
+              </div>
+
+              {form.tags && form.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {form.tags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => removeTag(tag)}
+                      className="px-2.5 py-1 rounded-full border border-brand-500/20 bg-brand-500/10 text-xs text-brand-300"
+                    >
+                      #{tag} x
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-4 space-y-4">
+            <h3 className="text-sm font-semibold text-[var(--text)]">Planning</h3>
+
             <Select
               label="Priority"
               value={form.priority}
               onChange={(e) => set('priority', e.target.value as TaskPriority)}
               options={[
-                { value: 'urgent', label: '🔴 Urgent' },
-                { value: 'high', label: '🟠 High' },
-                { value: 'medium', label: '🟡 Medium' },
-                { value: 'low', label: '🟢 Low' },
+                { value: 'urgent', label: 'Urgent' },
+                { value: 'high', label: 'High' },
+                { value: 'medium', label: 'Medium' },
+                { value: 'low', label: 'Low' },
               ]}
             />
+
             <Select
               label="Status"
               value={form.status}
               onChange={(e) => set('status', e.target.value as TaskStatus)}
               options={[
-                { value: 'pending', label: 'Pending' },
-                { value: 'in_progress', label: 'In Progress' },
-                { value: 'completed', label: 'Completed' },
+                { value: 'pending', label: 'To do' },
+                { value: 'in_progress', label: 'In progress' },
+                { value: 'completed', label: 'Done' },
               ]}
             />
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
             <Select
               label="Category"
               value={form.category}
               onChange={(e) => set('category', e.target.value as TaskCategory)}
               options={[
-                { value: 'work', label: '💼 Work' },
-                { value: 'personal', label: '🏠 Personal' },
-                { value: 'study', label: '📚 Study' },
-                { value: 'other', label: '📌 Other' },
+                { value: 'work', label: 'Work' },
+                { value: 'personal', label: 'Personal' },
+                { value: 'study', label: 'Study' },
+                { value: 'other', label: 'Other' },
               ]}
             />
+
             <Select
               label="Recurrence"
               value={form.recurrence}
               onChange={(e) => set('recurrence', e.target.value as RecurrenceType)}
               options={[
                 { value: 'none', label: 'No recurrence' },
-                { value: 'daily', label: '🔁 Daily' },
-                { value: 'weekly', label: '📅 Weekly' },
-                { value: 'monthly', label: '🗓️ Monthly' },
+                { value: 'daily', label: 'Daily' },
+                { value: 'weekly', label: 'Weekly' },
+                { value: 'monthly', label: 'Monthly' },
               ]}
             />
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Due Date *"
-              type="date"
-              value={form.due_date}
-              onChange={(e) => set('due_date', e.target.value)}
-              error={errors.due_date}
-            />
-            
             <Select
-  label="Assign To"
-  value={form.assigned_to || ''}
-  onChange={(e) => set('assigned_to', e.target.value)}
-  options={[
-    { value: '', label: 'Unassigned' },
-    ...employees.map((u) => ({
-      value: u.id,
-      label: `${u.name} (Employee)`,
-    })),
-    
-    ...managers.map((u) => ({
-      value: u.id,
-      label: `${u.name} (Manager)`,
-    })),
-  ]}
-/>
-          </div>
+              label="Depends on task"
+              value=""
+              onChange={(e) => {
+                if (e.target.value && !form.dependencies?.includes(e.target.value)) {
+                  set('dependencies', [...(form.dependencies || []), e.target.value]);
+                }
+              }}
+              options={[
+                { value: '', label: 'Select dependency...' },
+                ...tasks
+                  .filter((item) => item.id !== task?.id)
+                  .map((item) => ({ value: item.id, label: item.title })),
+              ]}
+            />
 
-          {/* Dependencies */}
-          <Select
-            label="Depends on task"
-            value=""
-            onChange={(e) => {
-              if (e.target.value && !form.dependencies?.includes(e.target.value)) {
-                set('dependencies', [...(form.dependencies || []), e.target.value]);
-              }
-            }}
-            options={[
-              { value: '', label: 'Select dependency...' },
-              ...tasks
-                .filter((t) => t.id !== task?.id)
-                .map((t) => ({ value: t.id, label: t.title })),
-            ]}
-          />
-          {form.dependencies && form.dependencies.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {form.dependencies.map((depId) => {
-                const dep = tasks.find((t) => t.id === depId);
-                return dep ? (
-                  <span key={depId} className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-[var(--surface-3)] text-[var(--text-muted)]">
-                    {dep.title}
-                    <button type="button" onClick={() => set('dependencies', form.dependencies?.filter((d) => d !== depId))} className="hover:text-red-500">×</button>
-                  </span>
-                ) : null;
-              })}
-            </div>
-          )}
-
-          {/* Tags */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-[var(--text)]">Tags</label>
-            <div className="flex gap-2">
-              <input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
-                placeholder="Add a tag and press Enter"
-                className="flex-1 h-10 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text)] placeholder:text-[var(--text-muted)] text-sm px-3 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
-              />
-              <Button type="button" variant="secondary" size="md" onClick={addTag}>Add</Button>
-            </div>
-            {form.tags && form.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                {form.tags.map((tag) => (
-                  <span key={tag} className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-brand-600/10 text-brand-400 border border-brand-600/20">
-                    #{tag}
-                    <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-400 ml-0.5">×</button>
-                  </span>
-                ))}
+            {form.dependencies && form.dependencies.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {form.dependencies.map((dependencyId) => {
+                  const dependency = tasks.find((item) => item.id === dependencyId);
+                  return dependency ? (
+                    <button
+                      key={dependencyId}
+                      type="button"
+                      onClick={() =>
+                        set(
+                          'dependencies',
+                          (form.dependencies || []).filter((item) => item !== dependencyId)
+                        )
+                      }
+                      className="px-2 py-1 rounded-lg bg-[var(--surface)] text-xs text-[var(--text-muted)] border border-[var(--border)]"
+                    >
+                      {dependency.title} x
+                    </button>
+                  ) : null;
+                })}
               </div>
             )}
           </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-2 border-t border-[var(--border)]">
-            <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-            <Button type="submit" loading={loading}>
-              {task ? 'Save Changes' : 'Create Task'}
-            </Button>
-          </div>
-        </form>
-      </div>
+        <div className="flex justify-end gap-3 pt-3 border-t border-[var(--border)]">
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" loading={loading}>
+            {task ? 'Save Changes' : 'Create Task'}
+          </Button>
+        </div>
+      </form>
     </Modal>
   );
 }

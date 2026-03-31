@@ -223,3 +223,70 @@ export function EmptyState({ icon, title, description, action }: {
     </div>
   );
 }
+
+interface PaginationProps {
+  currentPage: number;
+  totalItems: number;
+  pageSize?: number;
+  onPageChange: (page: number) => void;
+  itemLabel?: string;
+  className?: string;
+}
+
+export function Pagination({
+  currentPage,
+  totalItems,
+  pageSize = 5,
+  onPageChange,
+  itemLabel = 'items',
+  className,
+}: PaginationProps) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
+
+  if (totalItems <= pageSize) return null;
+
+  const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  return (
+    <div className={cn('flex items-center justify-between gap-3 pt-4 border-t border-[var(--border)]', className)}>
+      <p className="text-xs text-[var(--text-muted)]">
+        Showing {startItem}-{endItem} of {totalItems} {itemLabel}
+      </p>
+
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text)] disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Prev
+        </button>
+
+        {pages.map((page) => (
+          <button
+            key={page}
+            onClick={() => onPageChange(page)}
+            className={cn(
+              'h-8 min-w-8 px-2 rounded-lg text-xs font-medium border transition-colors',
+              currentPage === page
+                ? 'border-brand-500 bg-brand-500 text-white'
+                : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)]'
+            )}
+          >
+            {page}
+          </button>
+        ))}
+
+        <button
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text)] disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}

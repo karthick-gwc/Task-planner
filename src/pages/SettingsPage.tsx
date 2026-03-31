@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Moon, Sun, Bell, Shield, User, Palette, Save, Check } from 'lucide-react';
+import { Moon, Sun, Bell, Shield, User, Palette, Save, Check, LayoutTemplate, SwatchBook } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../hooks/useAppRedux';
-import { setTheme } from '../components/store/slices/uiSlice';
+import { setDensity, setSurfaceStyle, setTheme } from '../components/store/slices/uiSlice';
 import { Avatar } from '../components/ui';
 import { Input } from '../components/ui/Input';
 import toast from 'react-hot-toast';
@@ -51,14 +51,14 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void 
 // ─── Main component ───────────────────────────────────────────────────────────
 export function SettingsPage() {
   const dispatch        = useAppDispatch();
-  const { theme }       = useAppSelector((s) => s.ui);
+  const { theme, density, surfaceStyle } = useAppSelector((s) => s.ui);
   const { user }        = useAppSelector((s) => s.auth);
   const [name, setName] = useState(user?.name ?? '');
   const [notif, setNotif] = useState({
     email: true, inApp: true, overdue: true, reminder: true,
   });
 
-  const handleSave = () => toast.success('Settings saved!');
+  const handleSave = () => toast.success('Workspace preferences updated');
 
   const NOTIF_ITEMS: { key: keyof typeof notif; label: string; desc: string }[] = [
     { key: 'email',    label: 'Email Notifications',  desc: 'Receive task reminders via email' },
@@ -128,6 +128,57 @@ export function SettingsPage() {
               </button>
             );
           })}
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-3)] p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <LayoutTemplate className="h-4 w-4 text-brand-500" />
+              <p className="text-sm font-semibold text-[var(--text)]">Layout density</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {(['comfortable', 'compact'] as const).map((option) => (
+                <button
+                  key={option}
+                  onClick={() => dispatch(setDensity(option))}
+                  className={cn(
+                    'rounded-xl border px-3 py-2 text-sm font-medium transition-colors',
+                    density === option
+                      ? 'border-brand-500 bg-brand-500 text-white'
+                      : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'
+                  )}
+                >
+                  {option === 'comfortable' ? 'Comfortable' : 'Compact'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-3)] p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <SwatchBook className="h-4 w-4 text-brand-500" />
+              <p className="text-sm font-semibold text-[var(--text)]">Workspace background</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { key: 'tint', label: 'Jira tint' },
+                { key: 'flat', label: 'Flat canvas' },
+              ] as const).map((option) => (
+                <button
+                  key={option.key}
+                  onClick={() => dispatch(setSurfaceStyle(option.key))}
+                  className={cn(
+                    'rounded-xl border px-3 py-2 text-sm font-medium transition-colors',
+                    surfaceStyle === option.key
+                      ? 'border-brand-500 bg-brand-500 text-white'
+                      : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </Section>
 
